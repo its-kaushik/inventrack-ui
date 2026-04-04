@@ -48,12 +48,14 @@ const roleLabel: Record<UserRole, string> = {
   owner: 'Owner',
   manager: 'Manager',
   salesperson: 'Salesperson',
+  super_admin: 'Super Admin',
 }
 
 const roleBadgeVariant: Record<UserRole, 'default' | 'secondary' | 'outline'> = {
   owner: 'default',
   manager: 'secondary',
   salesperson: 'outline',
+  super_admin: 'default',
 }
 
 function UserManagementPage() {

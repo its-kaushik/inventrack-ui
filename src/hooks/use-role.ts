@@ -16,5 +16,6 @@ export function useRole() {
     canViewPnL: role === 'owner',
     canDeleteProducts: role === 'owner',
     canManageProducts: role !== 'salesperson',
+    isSuperAdmin: role === 'super_admin',
   }
 }

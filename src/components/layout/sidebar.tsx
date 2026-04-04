@@ -38,7 +38,7 @@ interface NavItem {
   icon: LucideIcon
   href: string
   ownerOnly?: boolean
-  roles: Array<'owner' | 'manager' | 'salesperson'>
+  roles: Array<'owner' | 'manager' | 'salesperson' | 'super_admin'>
 }
 
 const navItems: NavItem[] = [

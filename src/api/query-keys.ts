@@ -117,4 +117,13 @@ export const queryKeys = {
     unreadCount: () => ['notifications', 'unread-count'] as const,
     list: (filters: Record<string, unknown>) => ['notifications', 'list', filters] as const,
   },
+  admin: {
+    dashboard: () => ['admin', 'dashboard'] as const,
+    tenants: {
+      all: () => ['admin', 'tenants'] as const,
+      list: (filters: Record<string, unknown>) => ['admin', 'tenants', 'list', filters] as const,
+      detail: (id: string) => ['admin', 'tenants', id] as const,
+      usage: (id: string) => ['admin', 'tenants', id, 'usage'] as const,
+    },
+  },
 }

@@ -10,6 +10,8 @@ import type {
   AuditAction,
   EntityType,
   ReportType,
+  TenantStatus,
+  SubscriptionPlan,
 } from './enums'
 
 export interface Tenant {
@@ -484,4 +486,46 @@ export interface ReportData {
   columns: Array<{ key: string; header: string; align?: 'left' | 'right' }>
   rows: Array<Record<string, unknown>>
   summary?: Record<string, number>
+}
+
+// ── Phase 4: SaaS & Super Admin ───────────────────────
+
+export interface TenantInfo {
+  id: string
+  name: string
+  status: TenantStatus
+  plan: SubscriptionPlan
+  gstin: string | null
+  gstScheme: GstScheme
+  invoicePrefix: string
+  address: string | null
+  ownerName: string
+  ownerPhone: string
+  ownerEmail: string | null
+  userCount: number
+  productCount: number
+  billCount: number
+  lastActiveAt: string | null
+  createdAt: string
+  trialEndsAt: string | null
+}
+
+export interface AdminDashboardData {
+  totalTenants: number
+  activeTenants: number
+  trialTenants: number
+  totalUsers: number
+  totalRevenue: number
+  growthData: Array<{ month: string; tenants: number; revenue: number }>
+  recentSignups: TenantInfo[]
+}
+
+export interface TenantUsageStats {
+  totalProducts: number
+  totalBills: number
+  totalRevenue: number
+  totalUsers: number
+  storageUsedMb: number
+  lastBillAt: string | null
+  monthlyBillTrend: Array<{ month: string; count: number; revenue: number }>
 }
