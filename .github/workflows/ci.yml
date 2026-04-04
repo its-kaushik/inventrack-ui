@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc -b --noEmit
+
+      - name: Run tests
+        run: npm test -- --run --passWithNoTests
+
+      - name: Build
+        run: npm run build
+
+      - name: Check bundle size
+        run: |
+          MAIN_SIZE=$(stat -f%z dist/assets/index-*.js 2>/dev/null || stat -c%s dist/assets/index-*.js 2>/dev/null)
+          echo "Main bundle size: $MAIN_SIZE bytes"
+          if [ "$MAIN_SIZE" -gt 524288 ]; then
+            echo "WARNING: Main bundle exceeds 500KB ($MAIN_SIZE bytes)"
+          fi
