@@ -31,7 +31,7 @@ export function resetPassword(token: string, newPassword: string) {
 }
 
 export function getMe() {
-  return apiGet<{ user: User; tenant: Tenant | null }>('/auth/me')
+  return apiGet<User>('/auth/me')
 }
 
 export function verifyOtp(phone: string, otp: string) {

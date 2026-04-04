@@ -20,7 +20,8 @@ export async function restoreSession(): Promise<void> {
     useAuthStore.getState().setAccessToken(accessToken)
 
     const meResponse = await getMe()
-    const { user, tenant } = meResponse.data
+    const user = meResponse.data
+    const tenant = user.tenant ?? null
 
     useAuthStore.getState().setAuth(user, accessToken, tenant)
   } catch {
