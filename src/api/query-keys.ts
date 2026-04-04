@@ -76,8 +76,7 @@ export const queryKeys = {
   },
   stockAdjustments: {
     all: () => ['stock-adjustments'] as const,
-    list: (filters: Record<string, unknown>) =>
-      ['stock-adjustments', 'list', filters] as const,
+    list: (filters: Record<string, unknown>) => ['stock-adjustments', 'list', filters] as const,
   },
   stockAudits: {
     all: () => ['stock-audits'] as const,
@@ -103,15 +102,24 @@ export const queryKeys = {
     data: (params: Record<string, unknown>) => ['pnl', params] as const,
   },
   reports: {
-    data: (type: string, filters: Record<string, unknown>) =>
-      ['reports', type, filters] as const,
+    data: (type: string, filters: Record<string, unknown>) => ['reports', type, filters] as const,
   },
   audit: {
     all: () => ['audit'] as const,
     list: (filters: Record<string, unknown>) => ['audit', 'list', filters] as const,
   },
   returns: {
-    returnable: (billId: string) => ['returns', 'returnable', billId] as const,
+    all: () => ['returns'] as const,
+    list: (filters: Record<string, unknown>) => ['returns', 'list', filters] as const,
+    detail: (id: string) => ['returns', id] as const,
+  },
+  syncConflicts: {
+    all: () => ['sync-conflicts'] as const,
+    list: (filters: Record<string, unknown>) => ['sync-conflicts', 'list', filters] as const,
+    count: () => ['sync-conflicts', 'count'] as const,
+  },
+  heldBills: {
+    all: () => ['bills', 'held'] as const,
   },
   notifications: {
     unreadCount: () => ['notifications', 'unread-count'] as const,

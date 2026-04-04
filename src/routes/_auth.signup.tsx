@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Eye, EyeOff, Store, Users, CreditCard, Phone, Lock, Loader2, User, Mail } from 'lucide-react'
+import { Eye, EyeOff, Store, Phone, Lock, Loader2, User, Mail } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { signupTenant } from '@/api/signup.api'
 import {
@@ -29,7 +29,9 @@ const signupSchema = z
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    plan: z.enum(['free', 'basic', 'pro']),
+    address: z.string().optional().or(z.literal('')),
+    gstin: z.string().max(15).optional().or(z.literal('')),
+    gstScheme: z.enum(['regular', 'composition']).optional(),
     terms: z.literal(true, 'You must agree to the Terms of Service'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -38,27 +40,6 @@ const signupSchema = z
   })
 
 type SignupFormValues = z.infer<typeof signupSchema>
-
-const plans = [
-  {
-    value: 'free' as const,
-    label: 'Free',
-    description: 'Up to 100 SKUs, 1 user',
-    icon: Store,
-  },
-  {
-    value: 'basic' as const,
-    label: 'Basic',
-    description: 'Up to 2,000 SKUs, 3 users, reports',
-    icon: Users,
-  },
-  {
-    value: 'pro' as const,
-    label: 'Pro',
-    description: 'Unlimited SKUs, users, all features',
-    icon: CreditCard,
-  },
-]
 
 export const Route = createFileRoute('/_auth/signup')({
   component: SignupPage,
@@ -86,12 +67,14 @@ function SignupPage() {
       password: '',
       confirmPassword: '',
       email: '',
-      plan: 'free',
+      address: '',
+      gstin: '',
+      gstScheme: undefined,
       terms: false as unknown as true,
     },
   })
 
-  const selectedPlan = watch('plan')
+  const selectedGstScheme = watch('gstScheme')
 
   async function onSubmit(data: SignupFormValues) {
     setIsLoading(true)
@@ -102,15 +85,16 @@ function SignupPage() {
         phone: data.phone,
         password: data.password,
         email: data.email || undefined,
-        plan: data.plan,
+        address: data.address || undefined,
+        gstin: data.gstin || undefined,
+        gstScheme: data.gstScheme || undefined,
       })
       const { owner, accessToken, tenant } = res.data
       setAuth(owner, accessToken, tenant)
       toast.success('Account created successfully!')
       navigate({ to: '/setup' })
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Signup failed. Please try again.'
+      const message = error instanceof Error ? error.message : 'Signup failed. Please try again.'
       toast.error(message)
     } finally {
       setIsLoading(false)
@@ -185,9 +169,7 @@ function SignupPage() {
                   {...register('phone')}
                 />
               </div>
-              {errors.phone && (
-                <p className="text-xs text-destructive">{errors.phone.message}</p>
-              )}
+              {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
             </div>
 
             {/* Password */}
@@ -265,48 +247,55 @@ function SignupPage() {
                   {...register('email')}
                 />
               </div>
-              {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
 
-            {/* Plan Selection */}
+            {/* Address */}
+            <div className="space-y-1.5">
+              <Label htmlFor="address">Address</Label>
+              <Input id="address" placeholder="Shop address" {...register('address')} />
+            </div>
+
+            {/* GSTIN */}
+            <div className="space-y-1.5">
+              <Label htmlFor="gstin">GSTIN</Label>
+              <Input
+                id="gstin"
+                placeholder="e.g. 09ABCDE1234F1Z5"
+                maxLength={15}
+                {...register('gstin')}
+              />
+            </div>
+
+            {/* GST Scheme */}
             <div className="space-y-2">
-              <Label>Choose a Plan</Label>
+              <Label>GST Scheme</Label>
               <Controller
                 control={control}
-                name="plan"
+                name="gstScheme"
                 render={({ field }) => (
                   <RadioGroup
-                    value={field.value}
+                    value={field.value ?? ''}
                     onValueChange={field.onChange}
-                    className="grid gap-3"
+                    className="grid grid-cols-2 gap-3"
                   >
-                    {plans.map((plan) => {
-                      const Icon = plan.icon
-                      return (
-                        <label
-                          key={plan.value}
-                          htmlFor={`plan-${plan.value}`}
-                          className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                            selectedPlan === plan.value
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:bg-muted/50'
-                          }`}
-                        >
-                          <RadioGroupItem
-                            value={plan.value}
-                            id={`plan-${plan.value}`}
-                            className="mt-0.5"
-                          />
-                          <Icon className="size-5 text-muted-foreground mt-0.5 shrink-0" />
-                          <div className="space-y-1">
-                            <span className="text-sm font-medium">{plan.label}</span>
-                            <p className="text-xs text-muted-foreground">{plan.description}</p>
-                          </div>
-                        </label>
-                      )
-                    })}
+                    {[
+                      { value: 'regular' as const, label: 'Regular' },
+                      { value: 'composition' as const, label: 'Composition' },
+                    ].map((scheme) => (
+                      <label
+                        key={scheme.value}
+                        htmlFor={`gst-${scheme.value}`}
+                        className={`flex items-center gap-2 rounded-lg border p-3 cursor-pointer transition-colors ${
+                          selectedGstScheme === scheme.value
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:bg-muted/50'
+                        }`}
+                      >
+                        <RadioGroupItem value={scheme.value} id={`gst-${scheme.value}`} />
+                        <span className="text-sm font-medium">{scheme.label}</span>
+                      </label>
+                    ))}
                   </RadioGroup>
                 )}
               />
@@ -331,9 +320,7 @@ function SignupPage() {
                   </div>
                 )}
               />
-              {errors.terms && (
-                <p className="text-xs text-destructive">{errors.terms.message}</p>
-              )}
+              {errors.terms && <p className="text-xs text-destructive">{errors.terms.message}</p>}
             </div>
           </form>
         </CardContent>

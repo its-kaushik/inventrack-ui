@@ -1,6 +1,6 @@
 import type { AdminDashboardData, TenantInfo, TenantUsageStats } from '@/types/models'
 import type { PaginatedResponse } from '@/types/api'
-import { apiGet, apiPost } from '@/api/client'
+import { apiGet, apiPost, apiPatch } from '@/api/client'
 
 export interface TenantFilters {
   status?: string
@@ -8,6 +8,17 @@ export interface TenantFilters {
   search?: string
   limit?: number
   offset?: number
+}
+
+export function adminLogin(email: string, password: string) {
+  return apiPost<{
+    accessToken: string
+    admin: { id: string; email: string; role: string }
+  }>('/admin/login', { email, password })
+}
+
+export function adminRefresh() {
+  return apiPost<{ accessToken: string }>('/admin/refresh')
 }
 
 export function getAdminDashboard() {
@@ -33,18 +44,31 @@ export function getTenantUsage(id: string) {
   return apiGet<TenantUsageStats>(`/admin/tenants/${id}/usage`)
 }
 
+export function updateTenant(
+  id: string,
+  data: Partial<{ status: 'active' | 'suspended'; plan: 'free' | 'basic' | 'pro' }>,
+) {
+  return apiPatch<TenantInfo>(`/admin/tenants/${id}`, data)
+}
+
+// Backward-compatible convenience wrappers
 export function suspendTenant(id: string) {
-  return apiPost<void>(`/admin/tenants/${id}/suspend`)
+  return updateTenant(id, { status: 'suspended' })
 }
 
 export function activateTenant(id: string) {
-  return apiPost<void>(`/admin/tenants/${id}/activate`)
+  return updateTenant(id, { status: 'active' })
 }
 
+export function changePlan(id: string, plan: 'free' | 'basic' | 'pro') {
+  return updateTenant(id, { plan })
+}
+
+/**
+ * @deprecated Use updateTenant() instead. The API no longer has a dedicated extend-trial endpoint.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function extendTrial(id: string, days: number) {
-  return apiPost<void>(`/admin/tenants/${id}/extend-trial`, { days })
-}
-
-export function changePlan(id: string, plan: string) {
-  return apiPost<void>(`/admin/tenants/${id}/plan`, { plan })
+  // No longer a separate endpoint; use PATCH /admin/tenants/:id
+  return updateTenant(id, {})
 }

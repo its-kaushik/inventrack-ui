@@ -57,9 +57,8 @@ function ItcRegisterPage() {
 
   const filters: ItcFilters = useMemo(
     () => ({
-      supplier_id: supplierId || undefined,
-      date_from: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
-      date_to: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
+      from: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+      to: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
       limit: PAGE_SIZE,
       offset,
     }),
@@ -98,9 +97,7 @@ function ItcRegisterPage() {
         key: 'invoiceNumber',
         header: 'Invoice #',
         hideOnMobile: true,
-        render: (row) => (
-          <span className="font-mono text-xs">{row.invoiceNumber ?? '-'}</span>
-        ),
+        render: (row) => <span className="font-mono text-xs">{row.invoiceNumber ?? '-'}</span>,
       },
       {
         key: 'invoiceDate',
@@ -229,9 +226,7 @@ function ItcRegisterPage() {
             >
               Previous
             </Button>
-            <span className="text-sm text-muted-foreground">
-              Showing {items.length} entries
-            </span>
+            <span className="text-sm text-muted-foreground">Showing {items.length} entries</span>
             <Button
               variant="outline"
               size="sm"

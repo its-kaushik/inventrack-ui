@@ -7,7 +7,9 @@ export function signupTenant(data: {
   phone: string
   password: string
   email?: string
-  plan?: string
+  address?: string
+  gstin?: string
+  gstScheme?: 'regular' | 'composition'
 }) {
   return apiPost<{ tenant: Tenant; owner: User; accessToken: string }>('/signup', data)
 }

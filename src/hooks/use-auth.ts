@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/api/auth.api'
+import { getMe } from '@/api/auth.api'
 
 export function useAuth() {
   const user = useAuthStore((s) => s.user)
@@ -10,10 +11,19 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: ({ phone, password }: { phone: string; password: string }) =>
       authApi.login(phone, password),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       const { user, accessToken } = response.data
-      const tenant = user.tenant ?? response.data.tenant
-      useAuthStore.getState().setAuth(user, accessToken, tenant)
+      // Login response does not include tenant; set auth first, then fetch full profile
+      useAuthStore.getState().setAuth(user, accessToken, null)
+      try {
+        const meResponse = await getMe()
+        const { tenant } = meResponse.data
+        if (tenant) {
+          useAuthStore.getState().setTenant(tenant)
+        }
+      } catch {
+        // Tenant will be loaded on next session restore
+      }
     },
   })
 

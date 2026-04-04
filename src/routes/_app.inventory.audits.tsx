@@ -202,9 +202,9 @@ function StockAuditPage() {
   const createMutation = useMutation({
     mutationFn: (data: AuditFormValues) =>
       createStockAudit({
-        lines: data.lines.map((l) => ({
+        items: data.lines.map((l) => ({
           productId: l.productId,
-          countedQuantity: l.countedQuantity,
+          countedQty: l.countedQuantity,
         })),
       }),
     onSuccess: () => {

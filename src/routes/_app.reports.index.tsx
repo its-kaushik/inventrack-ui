@@ -18,12 +18,7 @@ import {
   Truck,
   ArrowUpDown,
 } from 'lucide-react'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export const Route = createFileRoute('/_app/reports/')({
   component: ReportsHubPage,
@@ -31,109 +26,109 @@ export const Route = createFileRoute('/_app/reports/')({
 
 const reportTypes = [
   {
-    type: 'daily_sales',
+    type: 'daily-sales',
     title: 'Daily Sales Summary',
     description: 'Total sales, returns, net sales, payment split',
     icon: BarChart3,
   },
   {
-    type: 'sales_by_category',
+    type: 'sales-by-category',
     title: 'Sales by Category',
     description: 'Which categories sell most',
     icon: PieChart,
   },
   {
-    type: 'sales_by_brand',
+    type: 'sales-by-brand',
     title: 'Sales by Brand',
     description: 'Brand-wise performance',
     icon: Tag,
   },
   {
-    type: 'sales_by_salesperson',
+    type: 'sales-by-salesperson',
     title: 'Sales by Salesperson',
     description: 'Per-person sales',
     icon: Users,
   },
   {
-    type: 'inventory_valuation',
+    type: 'inventory-valuation',
     title: 'Inventory Valuation',
     description: 'Total stock value at cost',
     icon: Package,
   },
   {
-    type: 'aging_inventory',
+    type: 'aging-inventory',
     title: 'Aging Inventory',
     description: 'Items beyond threshold',
     icon: Clock,
   },
   {
-    type: 'low_stock',
+    type: 'low-stock',
     title: 'Low Stock Report',
     description: 'Items below minimum',
     icon: AlertTriangle,
   },
   {
-    type: 'dead_stock',
+    type: 'dead-stock',
     title: 'Dead Stock Report',
     description: 'Zero-sale items',
     icon: XCircle,
   },
   {
-    type: 'supplier_ledger',
+    type: 'supplier-ledger',
     title: 'Supplier Ledger',
     description: 'Per-supplier transactions',
     icon: Factory,
   },
   {
-    type: 'customer_ledger',
+    type: 'customer-ledger',
     title: 'Customer Ledger (Khata)',
     description: 'Per-customer transactions',
     icon: Users,
   },
   {
-    type: 'outstanding_payables',
+    type: 'outstanding-payables',
     title: 'Outstanding Payables',
     description: 'Owed to suppliers',
     icon: TrendingDown,
   },
   {
-    type: 'outstanding_receivables',
+    type: 'outstanding-receivables',
     title: 'Outstanding Receivables',
     description: 'Owed by customers',
     icon: TrendingUp,
   },
   {
-    type: 'profit_loss',
+    type: 'pnl',
     title: 'Profit & Loss',
     description: 'Revenue, COGS, expenses, net',
     icon: DollarSign,
   },
   {
-    type: 'bargain_discount',
+    type: 'bargain-discount',
     title: 'Bargain Discount Report',
     description: 'Additional discounts given',
     icon: Percent,
   },
   {
-    type: 'cash_register',
+    type: 'cash-register',
     title: 'Cash Register Report',
     description: 'Daily reconciliation',
     icon: Wallet,
   },
   {
-    type: 'gst_summary',
+    type: 'gst-summary',
     title: 'GST Summary',
     description: 'Tax liability for filing',
     icon: Receipt,
   },
   {
-    type: 'purchase_summary',
+    type: 'purchase-summary',
     title: 'Purchase Summary',
     description: 'Purchases by supplier/period',
     icon: Truck,
   },
   {
-    type: 'stock_movement',
+    type: 'stock-movement',
     title: 'Stock Movement',
     description: 'All stock in/out entries',
     icon: ArrowUpDown,

@@ -1,7 +1,7 @@
 import type { Bill } from '@/types/models'
 import type { PaymentMode } from '@/types/enums'
 import type { PaginatedResponse } from '@/types/api'
-import { apiGet, apiPost } from '@/api/client'
+import { apiGet, apiPost, apiDelete } from '@/api/client'
 
 export interface CreateBillData {
   items: Array<{
@@ -56,5 +56,38 @@ export function voidBill(id: string) {
 }
 
 export function syncBills(bills: Array<{ clientId: string; payload: unknown }>) {
-  return apiPost<{ synced: string[]; conflicts: Array<{ clientId: string; error: string }> }>('/bills/sync', { bills })
+  return apiPost<{ synced: string[]; conflicts: Array<{ clientId: string; error: string }> }>(
+    '/bills/sync',
+    { bills },
+  )
+}
+
+// ── Held (draft) bills ───────────────────────────────────
+
+export interface HeldBillData {
+  items: Array<{ productId: string; quantity: number }>
+  customerId?: string
+  additionalDiscountAmount?: number
+  notes?: string
+}
+
+export interface HeldBill extends HeldBillData {
+  id: string
+  createdAt: string
+}
+
+export function holdBill(data: HeldBillData) {
+  return apiPost<HeldBill>('/bills/hold', data)
+}
+
+export function listHeldBills() {
+  return apiGet<HeldBill[]>('/bills/held')
+}
+
+export function resumeHeldBill(id: string) {
+  return apiPost<HeldBillData>(`/bills/held/${id}/resume`)
+}
+
+export function deleteHeldBill(id: string) {
+  return apiDelete<{ deleted: boolean }>(`/bills/held/${id}`)
 }

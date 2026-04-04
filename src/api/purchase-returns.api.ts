@@ -10,9 +10,10 @@ export interface PurchaseReturnFilters {
 
 export function createPurchaseReturn(data: {
   purchaseId: string
-  items: Array<{ productId: string; quantity: number; costPrice: number; reason: string }>
+  items: Array<{ productId: string; quantity: number; costPrice: number }>
+  reason?: string
 }) {
-  return apiPost<PurchaseReturn>('/purchases/returns', data)
+  return apiPost<PurchaseReturn>('/purchase-returns', data)
 }
 
 export function listPurchaseReturns(filters?: PurchaseReturnFilters) {
@@ -23,9 +24,9 @@ export function listPurchaseReturns(filters?: PurchaseReturnFilters) {
     })
   }
   const qs = params.toString()
-  return apiGet<PaginatedResponse<PurchaseReturn>>(`/purchases/returns${qs ? `?${qs}` : ''}`)
+  return apiGet<PaginatedResponse<PurchaseReturn>>(`/purchase-returns${qs ? `?${qs}` : ''}`)
 }
 
 export function getPurchaseReturn(id: string) {
-  return apiGet<PurchaseReturn>(`/purchases/returns/${id}`)
+  return apiGet<PurchaseReturn>(`/purchase-returns/${id}`)
 }

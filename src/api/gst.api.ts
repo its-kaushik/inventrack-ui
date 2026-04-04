@@ -3,18 +3,22 @@ import type { PaginatedResponse } from '@/types/api'
 import { apiGet } from '@/api/client'
 
 export interface GstParams {
+  from?: string
+  to?: string
+  quarter?: number
+  fy?: string
+  /** @deprecated Use from/to instead. Kept for backward compatibility with period selectors. */
   period?: string
 }
 
 export interface ItcFilters {
-  supplier_id?: string
-  date_from?: string
-  date_to?: string
+  from?: string
+  to?: string
   limit?: number
   offset?: number
 }
 
-export function getGstDashboard(params?: GstParams) {
+export function getGstSummary(params?: GstParams) {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -22,7 +26,7 @@ export function getGstDashboard(params?: GstParams) {
     })
   }
   const qs = searchParams.toString()
-  return apiGet<GstDashboardData>(`/accounting/gst${qs ? `?${qs}` : ''}`)
+  return apiGet<GstDashboardData>(`/gst/summary${qs ? `?${qs}` : ''}`)
 }
 
 export function getGstReturnData(returnType: string, params?: GstParams) {
@@ -33,7 +37,7 @@ export function getGstReturnData(returnType: string, params?: GstParams) {
     })
   }
   const qs = searchParams.toString()
-  return apiGet<unknown>(`/accounting/gst/${returnType}${qs ? `?${qs}` : ''}`)
+  return apiGet<unknown>(`/gst/${returnType}${qs ? `?${qs}` : ''}`)
 }
 
 export function getItcRegister(filters?: ItcFilters) {
@@ -44,5 +48,19 @@ export function getItcRegister(filters?: ItcFilters) {
     })
   }
   const qs = params.toString()
-  return apiGet<PaginatedResponse<unknown>>(`/accounting/gst/itc${qs ? `?${qs}` : ''}`)
+  return apiGet<PaginatedResponse<unknown>>(`/gst/itc${qs ? `?${qs}` : ''}`)
 }
+
+export function getHsnSummary(params?: { from?: string; to?: string }) {
+  const searchParams = new URLSearchParams()
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value != null) searchParams.set(key, String(value))
+    })
+  }
+  const qs = searchParams.toString()
+  return apiGet<unknown>(`/gst/hsn-summary${qs ? `?${qs}` : ''}`)
+}
+
+// Keep backward-compatible alias
+export const getGstDashboard = getGstSummary

@@ -996,7 +996,7 @@ const phase2Handlers = [
   // Reports
   http.get(`${API_BASE}/reports/:type`, () => {
     return ok({
-      type: 'daily_sales',
+      type: 'daily-sales',
       title: 'Daily Sales Report',
       columns: [
         { key: 'date', header: 'Date' },

@@ -1,6 +1,6 @@
 import type { PurchaseOrder } from '@/types/models'
 import type { PaginatedResponse } from '@/types/api'
-import { apiGet, apiPost, apiPut } from '@/api/client'
+import { apiGet, apiPost, apiPatch } from '@/api/client'
 
 export interface POFilters {
   supplier_id?: string
@@ -26,7 +26,7 @@ export function getPurchaseOrder(id: string) {
 
 export function createPurchaseOrder(data: {
   supplierId: string
-  items: Array<{ productId: string; quantity: number; expectedCostPrice: number }>
+  items: Array<{ productId: string; orderedQty: number; expectedCost: number }>
   notes?: string
 }) {
   return apiPost<PurchaseOrder>('/purchase-orders', data)
@@ -37,8 +37,7 @@ export function updatePurchaseOrder(
   data: Partial<{
     status: string
     notes: string
-    items: Array<{ productId: string; quantity: number; expectedCostPrice: number }>
   }>,
 ) {
-  return apiPut<PurchaseOrder>(`/purchase-orders/${id}`, data)
+  return apiPatch<PurchaseOrder>(`/purchase-orders/${id}`, data)
 }

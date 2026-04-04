@@ -9,11 +9,12 @@ export interface StockAuditFilters {
 }
 
 export function createStockAudit(data: {
-  lines: Array<{ productId: string; countedQuantity: number }>
+  items: Array<{ productId: string; countedQty: number }>
 }) {
-  return apiPost<StockAudit>('/stock/audits', data)
+  return apiPost<StockAudit>('/stock/audit', data)
 }
 
+/** NOTE: No list endpoint is documented in the API for stock audits. */
 export function listStockAudits(filters?: StockAuditFilters) {
   const params = new URLSearchParams()
   if (filters) {
@@ -22,13 +23,16 @@ export function listStockAudits(filters?: StockAuditFilters) {
     })
   }
   const qs = params.toString()
-  return apiGet<PaginatedResponse<StockAudit>>(`/stock/audits${qs ? `?${qs}` : ''}`)
+  return apiGet<PaginatedResponse<StockAudit>>(`/stock/audit${qs ? `?${qs}` : ''}`)
 }
 
 export function getStockAudit(id: string) {
-  return apiGet<StockAudit>(`/stock/audits/${id}`)
+  return apiGet<StockAudit>(`/stock/audit/${id}`)
 }
 
-export function approveStockAudit(id: string) {
-  return apiPost<StockAudit>(`/stock/audits/${id}/approve`)
+export function approveStockAudit(auditId: string) {
+  return apiPost<{ auditId: string; adjustmentsApplied: number; message: string }>(
+    '/stock/audit/approve',
+    { auditId },
+  )
 }

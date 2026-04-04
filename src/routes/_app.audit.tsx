@@ -98,8 +98,8 @@ function AuditLogPage() {
     ...(userId && { user_id: userId }),
     ...(actionFilter && { action: actionFilter }),
     ...(entityFilter && { entity_type: entityFilter }),
-    ...(dateRange.from && { date_from: dateRange.from.toISOString() }),
-    ...(dateRange.to && { date_to: dateRange.to.toISOString() }),
+    ...(dateRange.from && { from: dateRange.from.toISOString() }),
+    ...(dateRange.to && { to: dateRange.to.toISOString() }),
   }
 
   const { data: logsData, isLoading } = useQuery({
@@ -140,7 +140,13 @@ function AuditLogPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <DateRangePicker value={dateRange} onChange={(r) => { setDateRange(r); setOffset(0) }} />
+        <DateRangePicker
+          value={dateRange}
+          onChange={(r) => {
+            setDateRange(r)
+            setOffset(0)
+          }}
+        />
 
         <Select value={userId ?? '__all__'} onValueChange={handleUserChange}>
           <SelectTrigger>
@@ -211,7 +217,7 @@ function AuditLogPage() {
                 <TableHead>Action</TableHead>
                 <TableHead className="hidden sm:table-cell">Entity Type</TableHead>
                 <TableHead className="hidden md:table-cell">Entity ID</TableHead>
-                <TableHead>Summary</TableHead>
+                <TableHead>Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,31 +277,28 @@ function AuditRow({
   isExpanded: boolean
   onToggle: () => void
 }) {
-  const hasValues = entry.oldValue != null || entry.newValue != null
+  const hasMetadata = entry.metadata != null && Object.keys(entry.metadata).length > 0
 
   return (
     <>
       <TableRow
-        className={hasValues ? 'cursor-pointer' : undefined}
-        onClick={hasValues ? onToggle : undefined}
+        className={hasMetadata ? 'cursor-pointer' : undefined}
+        onClick={hasMetadata ? onToggle : undefined}
       >
         <TableCell className="w-8">
-          {hasValues && (
-            isExpanded ? (
+          {hasMetadata &&
+            (isExpanded ? (
               <ChevronUp className="size-4 text-muted-foreground" />
             ) : (
               <ChevronDown className="size-4 text-muted-foreground" />
-            )
-          )}
+            ))}
         </TableCell>
         <TableCell className="whitespace-nowrap text-sm">
           {formatDateTime(entry.createdAt)}
         </TableCell>
         <TableCell className="text-sm">{entry.userName}</TableCell>
         <TableCell>
-          <StatusBadge variant={actionVariant(entry.action)}>
-            {entry.action}
-          </StatusBadge>
+          <StatusBadge variant={actionVariant(entry.action)}>{entry.action}</StatusBadge>
         </TableCell>
         <TableCell className="hidden text-sm capitalize sm:table-cell">
           {entry.entityType.replace(/_/g, ' ')}
@@ -304,32 +307,20 @@ function AuditRow({
           {entry.entityId.slice(0, 8)}...
         </TableCell>
         <TableCell className="max-w-[200px] truncate text-sm">
-          {entry.summary}
+          {JSON.stringify(entry.metadata)}
         </TableCell>
       </TableRow>
 
-      {isExpanded && hasValues && (
+      {isExpanded && hasMetadata && (
         <TableRow>
           <TableCell colSpan={7} className="bg-muted/30 p-0">
             <Card className="m-2 border-dashed">
               <CardContent className="pt-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {entry.oldValue != null && (
-                    <div>
-                      <p className="mb-1 text-xs font-medium text-muted-foreground">Old Value</p>
-                      <pre className="max-h-60 overflow-auto rounded bg-muted p-3 text-xs">
-                        {JSON.stringify(entry.oldValue, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                  {entry.newValue != null && (
-                    <div>
-                      <p className="mb-1 text-xs font-medium text-muted-foreground">New Value</p>
-                      <pre className="max-h-60 overflow-auto rounded bg-muted p-3 text-xs">
-                        {JSON.stringify(entry.newValue, null, 2)}
-                      </pre>
-                    </div>
-                  )}
+                <div>
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">Metadata</p>
+                  <pre className="max-h-60 overflow-auto rounded bg-muted p-3 text-xs">
+                    {JSON.stringify(entry.metadata, null, 2)}
+                  </pre>
                 </div>
               </CardContent>
             </Card>

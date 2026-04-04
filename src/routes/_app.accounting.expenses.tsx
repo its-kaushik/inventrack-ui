@@ -55,8 +55,8 @@ function ExpenseListPage() {
   const filters: ExpenseFilters = useMemo(
     () => ({
       category: categoryFilter || undefined,
-      date_from: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
-      date_to: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
+      from: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+      to: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
       limit: PAGE_SIZE,
       offset,
     }),
@@ -72,10 +72,7 @@ function ExpenseListPage() {
   const hasMore = data?.hasMore ?? false
 
   // Monthly totals
-  const monthlyTotal = useMemo(
-    () => items.reduce((sum, e) => sum + Number(e.amount), 0),
-    [items],
-  )
+  const monthlyTotal = useMemo(() => items.reduce((sum, e) => sum + Number(e.amount), 0), [items])
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -102,7 +99,7 @@ function ExpenseListPage() {
         key: 'date',
         header: 'Date',
         sortable: true,
-        render: (e) => <span className="text-sm">{formatDate(e.date)}</span>,
+        render: (e) => <span className="text-sm">{formatDate(e.expenseDate ?? e.date ?? '')}</span>,
       },
       {
         key: 'category',
@@ -114,9 +111,7 @@ function ExpenseListPage() {
         header: 'Description',
         hideOnMobile: true,
         render: (e) => (
-          <span className="text-sm text-muted-foreground">
-            {e.description ?? '-'}
-          </span>
+          <span className="text-sm text-muted-foreground">{e.description ?? '-'}</span>
         ),
       },
       {
@@ -164,7 +159,9 @@ function ExpenseListPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{formatDate(expense.date)}</span>
+                <span className="text-sm font-medium">
+                  {formatDate(expense.expenseDate ?? expense.date ?? '')}
+                </span>
                 <StatusBadge variant="default">{expense.category}</StatusBadge>
               </div>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -245,7 +242,8 @@ function ExpenseListPage() {
           description="Track your business expenses here."
           action={{
             label: 'Add Expense',
-            onClick: () => navigate({ to: '/accounting/expenses/new', search: { edit: undefined } }),
+            onClick: () =>
+              navigate({ to: '/accounting/expenses/new', search: { edit: undefined } }),
           }}
         />
       ) : (

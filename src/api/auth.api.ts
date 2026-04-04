@@ -1,10 +1,9 @@
-import type { User, Tenant } from '@/types/models'
+import type { User } from '@/types/models'
 import { apiGet, apiPost } from '@/api/client'
 
 interface LoginResponse {
   accessToken: string
-  user: User
-  tenant: Tenant | null
+  user: User & { setupComplete?: boolean }
 }
 
 export function login(phone: string, password: string) {
@@ -31,7 +30,7 @@ export function resetPassword(token: string, newPassword: string) {
 }
 
 export function getMe() {
-  return apiGet<User>('/auth/me')
+  return apiGet<User & { tenant: import('@/types/models').Tenant }>('/auth/me')
 }
 
 export function verifyOtp(phone: string, otp: string) {
@@ -39,7 +38,7 @@ export function verifyOtp(phone: string, otp: string) {
 }
 
 export function resendOtp(phone: string) {
-  return apiPost<void>('/auth/resend-otp', { phone })
+  return apiPost<void>('/auth/send-otp', { phone })
 }
 
 // Convenience object export for hooks

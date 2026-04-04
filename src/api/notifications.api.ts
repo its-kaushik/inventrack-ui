@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@/api/client'
+import { apiGet, apiPatch } from '@/api/client'
 
 export interface Notification {
   id: string
@@ -24,9 +24,9 @@ export function listNotifications(params?: { limit?: number; offset?: number }) 
 }
 
 export function markAsRead(id: string) {
-  return apiPost<void>(`/notifications/${id}/read`)
+  return apiPatch<{ id: string; readAt: string }>(`/notifications/${id}/read`)
 }
 
 export function markAllAsRead() {
-  return apiPost<void>('/notifications/read-all')
+  return apiPatch<{ markedCount: number }>('/notifications/read-all')
 }

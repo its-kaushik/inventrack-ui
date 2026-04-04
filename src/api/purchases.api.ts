@@ -4,6 +4,7 @@ import { apiGet, apiPost } from '@/api/client'
 
 export interface CreatePurchaseData {
   supplierId: string
+  poId?: string
   invoiceNumber?: string | null
   invoiceDate?: string | null
   invoiceImageUrl?: string | null

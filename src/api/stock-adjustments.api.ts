@@ -15,9 +15,10 @@ export function createStockAdjustment(data: {
   reason: string
   notes?: string
 }) {
-  return apiPost<StockAdjustment>('/stock/adjustments', data)
+  return apiPost<StockAdjustment>('/stock/adjust', data)
 }
 
+/** NOTE: No list endpoint is documented in the API; this may not be available server-side. */
 export function listStockAdjustments(filters?: StockAdjustmentFilters) {
   const params = new URLSearchParams()
   if (filters) {

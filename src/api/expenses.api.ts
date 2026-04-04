@@ -4,8 +4,9 @@ import { apiGet, apiPost, apiPut, apiDelete } from '@/api/client'
 
 export interface ExpenseFilters {
   category?: string
-  date_from?: string
-  date_to?: string
+  from?: string
+  to?: string
+  is_recurring?: boolean
   limit?: number
   offset?: number
 }
@@ -26,11 +27,12 @@ export function getExpense(id: string) {
 }
 
 export function createExpense(data: {
-  date: string
+  expenseDate: string
   category: string
   amount: number
   description?: string
   isRecurring?: boolean
+  recurrenceInterval?: 'monthly' | 'quarterly' | 'yearly'
   receiptImageUrl?: string
 }) {
   return apiPost<Expense>('/expenses', data)
@@ -39,11 +41,12 @@ export function createExpense(data: {
 export function updateExpense(
   id: string,
   data: Partial<{
-    date: string
+    expenseDate: string
     category: string
     amount: number
     description: string
     isRecurring: boolean
+    recurrenceInterval: 'monthly' | 'quarterly' | 'yearly'
     receiptImageUrl: string
   }>,
 ) {

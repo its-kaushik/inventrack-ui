@@ -33,3 +33,7 @@ export function getStoreSettings() {
 export function updateStoreSettings(data: Partial<Tenant>) {
   return apiPatch<Tenant>('/settings/store', data)
 }
+
+export function exportData() {
+  return apiPost<{ jobId: string; message: string }>('/settings/export-data')
+}

@@ -16,7 +16,7 @@ interface ReportViewerProps {
   data: Record<string, unknown>[]
   summary?: Record<string, number>
   loading?: boolean
-  filters?: React.ReactNode  // custom filter bar slot
+  filters?: React.ReactNode // custom filter bar slot
   dateRange?: { from: Date | null; to: Date | null }
   onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
 }
@@ -38,10 +38,12 @@ export function ReportViewer({
     setExporting(format)
     try {
       const filterParams: Record<string, unknown> = {}
-      if (dateRange?.from) filterParams.date_from = dateRange.from.toISOString()
-      if (dateRange?.to) filterParams.date_to = dateRange.to.toISOString()
+      if (dateRange?.from) filterParams.from = dateRange.from.toISOString()
+      if (dateRange?.to) filterParams.to = dateRange.to.toISOString()
       await exportReport(reportType, format, filterParams)
-    } catch { /* toast error */ } finally {
+    } catch {
+      /* toast error */
+    } finally {
       setExporting(null)
     }
   }
@@ -55,11 +57,33 @@ export function ReportViewer({
           <Button variant="outline" size="sm" onClick={() => window.print()} className="no-print">
             <Printer className="mr-1.5 size-4" /> Print
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('xlsx')} disabled={!!exporting} className="no-print">
-            {exporting === 'xlsx' ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Download className="mr-1.5 size-4" />} Excel
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport('xlsx')}
+            disabled={!!exporting}
+            className="no-print"
+          >
+            {exporting === 'xlsx' ? (
+              <Loader2 className="mr-1.5 size-4 animate-spin" />
+            ) : (
+              <Download className="mr-1.5 size-4" />
+            )}{' '}
+            Excel
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} disabled={!!exporting} className="no-print">
-            {exporting === 'pdf' ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Download className="mr-1.5 size-4" />} PDF
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport('pdf')}
+            disabled={!!exporting}
+            className="no-print"
+          >
+            {exporting === 'pdf' ? (
+              <Loader2 className="mr-1.5 size-4 animate-spin" />
+            ) : (
+              <Download className="mr-1.5 size-4" />
+            )}{' '}
+            PDF
           </Button>
         </div>
       </div>
@@ -67,7 +91,10 @@ export function ReportViewer({
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 no-print">
         {onDateRangeChange && (
-          <DateRangePicker value={dateRange ?? { from: null, to: null }} onChange={onDateRangeChange} />
+          <DateRangePicker
+            value={dateRange ?? { from: null, to: null }}
+            onChange={onDateRangeChange}
+          />
         )}
         {filters}
       </div>
@@ -79,7 +106,9 @@ export function ReportViewer({
             <Card key={key}>
               <CardContent className="pt-4">
                 <p className="text-sm text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</p>
-                <p className="text-xl font-bold"><Amount value={value} /></p>
+                <p className="text-xl font-bold">
+                  <Amount value={value} />
+                </p>
               </CardContent>
             </Card>
           ))}
@@ -88,7 +117,9 @@ export function ReportViewer({
 
       {/* Data table */}
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
+        <div className="flex justify-center py-20">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
       ) : data.length === 0 ? (
         <EmptyState title="No data" description="No records found for the selected filters." />
       ) : (

@@ -7,12 +7,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { queryKeys } from '@/api/query-keys'
-import {
-  createExpense,
-  updateExpense,
-  getExpense,
-  listExpenseCategories,
-} from '@/api/expenses.api'
+import { createExpense, updateExpense, getExpense, listExpenseCategories } from '@/api/expenses.api'
 import { CurrencyInput } from '@/components/form/currency-input'
 import { ImageUpload } from '@/components/form/image-upload'
 import { Button } from '@/components/ui/button'
@@ -38,11 +33,12 @@ export const Route = createFileRoute('/_app/accounting/expenses/new')({
 // ---------- Schema ----------
 
 const expenseSchema = z.object({
-  date: z.string().min(1, 'Date is required'),
+  expenseDate: z.string().min(1, 'Date is required'),
   category: z.string().min(1, 'Category is required'),
   amount: z.number().positive('Amount must be greater than 0'),
   description: z.string().optional(),
   isRecurring: z.boolean(),
+  recurrenceInterval: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
   receiptImageUrl: z.string().optional(),
 })
 
@@ -78,11 +74,12 @@ function ExpenseFormPage() {
   } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      date: new Date().toISOString().split('T')[0],
+      expenseDate: new Date().toISOString().split('T')[0],
       category: '',
       amount: 0,
       description: '',
       isRecurring: false,
+      recurrenceInterval: undefined,
       receiptImageUrl: '',
     },
   })
@@ -91,11 +88,12 @@ function ExpenseFormPage() {
   useEffect(() => {
     if (existingExpense) {
       reset({
-        date: existingExpense.date.split('T')[0],
+        expenseDate: (existingExpense.expenseDate ?? '').split('T')[0],
         category: existingExpense.category,
         amount: Number(existingExpense.amount),
         description: existingExpense.description ?? '',
         isRecurring: existingExpense.isRecurring,
+        recurrenceInterval: existingExpense.recurrenceInterval,
         receiptImageUrl: existingExpense.receiptImageUrl ?? '',
       })
     }
@@ -106,20 +104,22 @@ function ExpenseFormPage() {
     mutationFn: (data: ExpenseFormValues) => {
       if (isEdit && editId) {
         return updateExpense(editId, {
-          date: data.date,
+          expenseDate: data.expenseDate,
           category: data.category,
           amount: data.amount,
           description: data.description || undefined,
           isRecurring: data.isRecurring,
+          recurrenceInterval: data.isRecurring ? data.recurrenceInterval : undefined,
           receiptImageUrl: data.receiptImageUrl || undefined,
         })
       }
       return createExpense({
-        date: data.date,
+        expenseDate: data.expenseDate,
         category: data.category,
         amount: data.amount,
         description: data.description || undefined,
         isRecurring: data.isRecurring,
+        recurrenceInterval: data.isRecurring ? data.recurrenceInterval : undefined,
         receiptImageUrl: data.receiptImageUrl || undefined,
       })
     },
@@ -142,21 +142,18 @@ function ExpenseFormPage() {
         </p>
       </div>
 
-      <form
-        className="max-w-lg space-y-6"
-        onSubmit={handleSubmit((data) => mutation.mutate(data))}
-      >
+      <form className="max-w-lg space-y-6" onSubmit={handleSubmit((data) => mutation.mutate(data))}>
         {/* Date */}
         <div className="space-y-1.5">
-          <Label htmlFor="date">Date *</Label>
+          <Label htmlFor="expenseDate">Date *</Label>
           <Input
-            id="date"
+            id="expenseDate"
             type="date"
-            {...register('date')}
-            aria-invalid={!!errors.date}
+            {...register('expenseDate')}
+            aria-invalid={!!errors.expenseDate}
           />
-          {errors.date && (
-            <p className="text-xs text-destructive">{errors.date.message}</p>
+          {errors.expenseDate && (
+            <p className="text-xs text-destructive">{errors.expenseDate.message}</p>
           )}
         </div>
 
@@ -181,9 +178,7 @@ function ExpenseFormPage() {
               </Select>
             )}
           />
-          {errors.category && (
-            <p className="text-xs text-destructive">{errors.category.message}</p>
-          )}
+          {errors.category && <p className="text-xs text-destructive">{errors.category.message}</p>}
         </div>
 
         {/* Amount */}
@@ -193,16 +188,10 @@ function ExpenseFormPage() {
             control={control}
             name="amount"
             render={({ field }) => (
-              <CurrencyInput
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="0"
-              />
+              <CurrencyInput value={field.value} onChange={field.onChange} placeholder="0" />
             )}
           />
-          {errors.amount && (
-            <p className="text-xs text-destructive">{errors.amount.message}</p>
-          )}
+          {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
         </div>
 
         {/* Description */}
@@ -221,11 +210,7 @@ function ExpenseFormPage() {
             control={control}
             name="isRecurring"
             render={({ field }) => (
-              <Switch
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                id="recurring"
-              />
+              <Switch checked={field.value} onCheckedChange={field.onChange} id="recurring" />
             )}
           />
           <Label htmlFor="recurring">Recurring expense</Label>

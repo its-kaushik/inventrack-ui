@@ -391,11 +391,14 @@ export interface Expense {
   id: string
   tenantId: string
   userId: string
-  date: string
+  expenseDate: string
+  /** @deprecated Use expenseDate */
+  date?: string
   category: string
   amount: string
   description: string | null
   isRecurring: boolean
+  recurrenceInterval?: 'monthly' | 'quarterly' | 'yearly'
   receiptImageUrl: string | null
   createdAt: string
   user?: User
@@ -472,9 +475,7 @@ export interface AuditLogEntry {
   action: AuditAction
   entityType: EntityType
   entityId: string
-  summary: string
-  oldValue: Record<string, unknown> | null
-  newValue: Record<string, unknown> | null
+  metadata: Record<string, unknown>
   createdAt: string
 }
 
@@ -511,13 +512,11 @@ export interface TenantInfo {
 }
 
 export interface AdminDashboardData {
-  totalTenants: number
-  activeTenants: number
-  trialTenants: number
+  tenantsByStatus: Record<string, number>
+  tenantsByPlan: Record<string, number>
+  billsThisMonth: number
+  signupsThisMonth: number
   totalUsers: number
-  totalRevenue: number
-  growthData: Array<{ month: string; tenants: number; revenue: number }>
-  recentSignups: TenantInfo[]
 }
 
 export interface TenantUsageStats {

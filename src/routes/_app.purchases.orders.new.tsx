@@ -166,8 +166,7 @@ function SupplierSelect({
 
   const { data: suppliers = [] } = useQuery({
     queryKey: queryKeys.suppliers.list({ search: debouncedSearch }),
-    queryFn: () =>
-      listSuppliers(debouncedSearch || undefined).then((res) => res.data),
+    queryFn: () => listSuppliers(debouncedSearch || undefined).then((res) => res.data),
   })
 
   return (
@@ -244,8 +243,8 @@ function PurchaseOrderCreatePage() {
         supplierId: data.supplierId,
         items: data.items.map((item) => ({
           productId: item.productId,
-          quantity: item.quantity,
-          expectedCostPrice: item.expectedCostPrice,
+          orderedQty: item.quantity,
+          expectedCost: item.expectedCostPrice,
         })),
         notes: data.notes || undefined,
       }),
@@ -257,11 +256,7 @@ function PurchaseOrderCreatePage() {
       navigate({ to: '/purchases/orders' })
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to create purchase order.',
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to create purchase order.')
     },
   })
 
@@ -274,9 +269,7 @@ function PurchaseOrderCreatePage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Create Purchase Order</h1>
-        <p className="text-sm text-muted-foreground">
-          Create a new purchase order for a supplier.
-        </p>
+        <p className="text-sm text-muted-foreground">Create a new purchase order for a supplier.</p>
       </div>
 
       <form className="max-w-4xl space-y-6">
@@ -329,14 +322,8 @@ function PurchaseOrderCreatePage() {
                         onSelect={(product) => {
                           setValue(`items.${index}.productId`, product.id)
                           setValue(`items.${index}.productName`, product.name)
-                          if (
-                            product.costPrice &&
-                            !watchedItems[index]?.expectedCostPrice
-                          ) {
-                            setValue(
-                              `items.${index}.expectedCostPrice`,
-                              product.costPrice,
-                            )
+                          if (product.costPrice && !watchedItems[index]?.expectedCostPrice) {
+                            setValue(`items.${index}.expectedCostPrice`, product.costPrice)
                           }
                         }}
                       />
@@ -372,11 +359,7 @@ function PurchaseOrderCreatePage() {
                   name={`items.${index}.expectedCostPrice`}
                   render={({ field: f }) => (
                     <div>
-                      <CurrencyInput
-                        value={f.value}
-                        onChange={f.onChange}
-                        placeholder="0"
-                      />
+                      <CurrencyInput value={f.value} onChange={f.onChange} placeholder="0" />
                       {errors.items?.[index]?.expectedCostPrice && (
                         <p className="mt-0.5 text-xs text-destructive">
                           {errors.items[index].expectedCostPrice?.message}
@@ -417,14 +400,8 @@ function PurchaseOrderCreatePage() {
                         onSelect={(product) => {
                           setValue(`items.${index}.productId`, product.id)
                           setValue(`items.${index}.productName`, product.name)
-                          if (
-                            product.costPrice &&
-                            !watchedItems[index]?.expectedCostPrice
-                          ) {
-                            setValue(
-                              `items.${index}.expectedCostPrice`,
-                              product.costPrice,
-                            )
+                          if (product.costPrice && !watchedItems[index]?.expectedCostPrice) {
+                            setValue(`items.${index}.expectedCostPrice`, product.costPrice)
                           }
                         }}
                       />
@@ -455,11 +432,7 @@ function PurchaseOrderCreatePage() {
                       control={control}
                       name={`items.${index}.expectedCostPrice`}
                       render={({ field: f }) => (
-                        <CurrencyInput
-                          value={f.value}
-                          onChange={f.onChange}
-                          placeholder="0"
-                        />
+                        <CurrencyInput value={f.value} onChange={f.onChange} placeholder="0" />
                       )}
                     />
                   </div>
@@ -500,10 +473,7 @@ function PurchaseOrderCreatePage() {
         {/* Notes */}
         <fieldset className="space-y-4 rounded-lg border p-4">
           <legend className="px-2 text-sm font-semibold">Notes</legend>
-          <Textarea
-            placeholder="Any notes for this purchase order..."
-            {...register('notes')}
-          />
+          <Textarea placeholder="Any notes for this purchase order..." {...register('notes')} />
         </fieldset>
 
         {/* Total */}
@@ -535,9 +505,7 @@ function PurchaseOrderCreatePage() {
             disabled={mutation.isPending}
             onClick={handleSubmit((data) => onSubmit(data, 'draft'))}
           >
-            {mutation.isPending && (
-              <Loader2 className="mr-1 size-4 animate-spin" />
-            )}
+            {mutation.isPending && <Loader2 className="mr-1 size-4 animate-spin" />}
             Save as Draft
           </Button>
           <Button
@@ -545,9 +513,7 @@ function PurchaseOrderCreatePage() {
             disabled={mutation.isPending}
             onClick={handleSubmit((data) => onSubmit(data, 'sent'))}
           >
-            {mutation.isPending && (
-              <Loader2 className="mr-1 size-4 animate-spin" />
-            )}
+            {mutation.isPending && <Loader2 className="mr-1 size-4 animate-spin" />}
             Send to Supplier
           </Button>
           <Button

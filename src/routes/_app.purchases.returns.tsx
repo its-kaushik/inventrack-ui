@@ -68,18 +68,13 @@ function PurchaseReturnPage() {
   const queryClient = useQueryClient()
   const [supplierSearch, setSupplierSearch] = useState('')
   const [supplierId, setSupplierId] = useState<string | undefined>(undefined)
-  const [selectedPurchaseId, setSelectedPurchaseId] = useState<
-    string | undefined
-  >(undefined)
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | undefined>(undefined)
   const debouncedSupplierSearch = useDebounce(supplierSearch, 300)
 
   // Suppliers list
   const { data: suppliersData } = useQuery({
     queryKey: queryKeys.suppliers.list({ search: debouncedSupplierSearch }),
-    queryFn: () =>
-      listSuppliers(debouncedSupplierSearch || undefined).then(
-        (res) => res.data,
-      ),
+    queryFn: () => listSuppliers(debouncedSupplierSearch || undefined).then((res) => res.data),
   })
   const suppliers = suppliersData ?? []
 
@@ -94,9 +89,7 @@ function PurchaseReturnPage() {
   )
 
   const { data: purchasesData, isLoading: isLoadingPurchases } = useQuery({
-    queryKey: queryKeys.purchases.list(
-      purchaseFilters as unknown as Record<string, unknown>,
-    ),
+    queryKey: queryKeys.purchases.list(purchaseFilters as unknown as Record<string, unknown>),
     queryFn: () => listPurchases(purchaseFilters).then((res) => res.data),
     enabled: !!supplierId,
   })
@@ -106,8 +99,7 @@ function PurchaseReturnPage() {
   // Load full purchase detail when selected
   const { data: purchaseDetail, isLoading: isLoadingDetail } = useQuery({
     queryKey: queryKeys.purchases.detail(selectedPurchaseId ?? ''),
-    queryFn: () =>
-      getPurchase(selectedPurchaseId!).then((res) => res.data),
+    queryFn: () => getPurchase(selectedPurchaseId!).then((res) => res.data),
     enabled: !!selectedPurchaseId,
   })
 
@@ -182,25 +174,24 @@ function PurchaseReturnPage() {
     }, 0)
   }, [watchedItems])
 
-  const selectedCount = watchedItems.filter(
-    (item) => item.selected && item.quantity > 0,
-  ).length
+  const selectedCount = watchedItems.filter((item) => item.selected && item.quantity > 0).length
 
   // Mutation
   const mutation = useMutation({
     mutationFn: (data: ReturnFormValues) => {
-      const returnItems = data.items
-        .filter((item) => item.selected && item.quantity > 0)
-        .map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          costPrice: item.costPrice,
-          reason: item.reason,
-        }))
+      const selectedItems = data.items.filter((item) => item.selected && item.quantity > 0)
+      const returnItems = selectedItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        costPrice: item.costPrice,
+      }))
+      // reason is now a top-level field per the API docs
+      const reason = selectedItems[0]?.reason
 
       return createPurchaseReturn({
         purchaseId: data.purchaseId,
         items: returnItems,
+        reason,
       })
     },
     onSuccess: () => {
@@ -220,18 +211,12 @@ function PurchaseReturnPage() {
       setSupplierSearch('')
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to submit purchase return.',
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to submit purchase return.')
     },
   })
 
   function onSubmit(data: ReturnFormValues) {
-    const hasSelected = data.items.some(
-      (item) => item.selected && item.quantity > 0,
-    )
+    const hasSelected = data.items.some((item) => item.selected && item.quantity > 0)
     if (!hasSelected) {
       toast.error('Select at least one item to return.')
       return
@@ -249,15 +234,10 @@ function PurchaseReturnPage() {
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="max-w-4xl space-y-6"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl space-y-6">
         {/* Select Purchase */}
         <fieldset className="space-y-4 rounded-lg border p-4">
-          <legend className="px-2 text-sm font-semibold">
-            Select Original Purchase
-          </legend>
+          <legend className="px-2 text-sm font-semibold">Select Original Purchase</legend>
 
           <div className="space-y-1.5">
             <Label>Search by Supplier</Label>
@@ -310,33 +290,23 @@ function PurchaseReturnPage() {
                     }
                   }}
                 >
-                  <SelectTrigger
-                    className="w-full"
-                    aria-invalid={!!errors.purchaseId}
-                  >
+                  <SelectTrigger className="w-full" aria-invalid={!!errors.purchaseId}>
                     <SelectValue placeholder="Select a purchase" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">
-                      Select a purchase...
-                    </SelectItem>
+                    <SelectItem value="__none__">Select a purchase...</SelectItem>
                     {purchases.map((p: Purchase) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.invoiceNumber ?? 'No Invoice'} -{' '}
-                        {format(
-                          new Date(p.invoiceDate ?? p.createdAt),
-                          'dd MMM yyyy',
-                        )}{' '}
-                        - {formatIndianCurrency(parseFloat(p.totalAmount))}
+                        {format(new Date(p.invoiceDate ?? p.createdAt), 'dd MMM yyyy')} -{' '}
+                        {formatIndianCurrency(parseFloat(p.totalAmount))}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
               {errors.purchaseId && (
-                <p className="text-xs text-destructive">
-                  {errors.purchaseId.message}
-                </p>
+                <p className="text-xs text-destructive">{errors.purchaseId.message}</p>
               )}
             </div>
           )}
@@ -345,9 +315,7 @@ function PurchaseReturnPage() {
         {/* Line Items for return */}
         {selectedPurchaseId && watchedItems.length > 0 && (
           <fieldset className="space-y-4 rounded-lg border p-4">
-            <legend className="px-2 text-sm font-semibold">
-              Items to Return
-            </legend>
+            <legend className="px-2 text-sm font-semibold">Items to Return</legend>
 
             {isLoadingDetail ? (
               <div className="space-y-2">
@@ -358,10 +326,7 @@ function PurchaseReturnPage() {
             ) : (
               <div className="space-y-3">
                 {watchedItems.map((item, index) => (
-                  <div
-                    key={item.productId}
-                    className="rounded-lg border p-3 space-y-3"
-                  >
+                  <div key={item.productId} className="rounded-lg border p-3 space-y-3">
                     <div className="flex items-start gap-3">
                       <Controller
                         control={control}
@@ -369,17 +334,13 @@ function PurchaseReturnPage() {
                         render={({ field }) => (
                           <Checkbox
                             checked={field.value}
-                            onCheckedChange={(checked) =>
-                              field.onChange(checked === true)
-                            }
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
                             className="mt-1"
                           />
                         )}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">
-                          {item.productName}
-                        </p>
+                        <p className="text-sm font-medium">{item.productName}</p>
                         <p className="text-xs text-muted-foreground">
                           Original qty: {item.maxQuantity} | Cost:{' '}
                           {formatIndianCurrency(item.costPrice)}
@@ -402,10 +363,7 @@ function PurchaseReturnPage() {
                                 value={field.value}
                                 onChange={(e) =>
                                   field.onChange(
-                                    Math.min(
-                                      parseInt(e.target.value) || 0,
-                                      item.maxQuantity,
-                                    ),
+                                    Math.min(parseInt(e.target.value) || 0, item.maxQuantity),
                                   )
                                 }
                                 className="h-8 text-sm"
@@ -419,10 +377,7 @@ function PurchaseReturnPage() {
                             control={control}
                             name={`items.${index}.reason`}
                             render={({ field }) => (
-                              <Select
-                                value={field.value}
-                                onValueChange={field.onChange}
-                              >
+                              <Select value={field.value} onValueChange={field.onChange}>
                                 <SelectTrigger className="h-8 text-sm">
                                   <SelectValue />
                                 </SelectTrigger>
@@ -439,10 +394,7 @@ function PurchaseReturnPage() {
                         </div>
                         <div className="flex items-end">
                           <Amount
-                            value={
-                              (watchedItems[index]?.quantity ?? 0) *
-                              item.costPrice
-                            }
+                            value={(watchedItems[index]?.quantity ?? 0) * item.costPrice}
                             className="text-sm font-medium"
                           />
                         </div>
@@ -464,20 +416,13 @@ function PurchaseReturnPage() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    Items to return
-                  </span>
+                  <span className="text-muted-foreground">Items to return</span>
                   <span className="tabular-nums">{selectedCount}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
-                  <span className="text-base font-semibold">
-                    Total Return Amount
-                  </span>
-                  <Amount
-                    value={totalReturnAmount}
-                    className="text-base font-bold"
-                  />
+                  <span className="text-base font-semibold">Total Return Amount</span>
+                  <Amount value={totalReturnAmount} className="text-base font-bold" />
                 </div>
               </div>
             </CardContent>
@@ -488,9 +433,7 @@ function PurchaseReturnPage() {
         {selectedPurchaseId && (
           <div className="flex gap-3">
             <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending && (
-                <Loader2 className="mr-1 size-4 animate-spin" />
-              )}
+              {mutation.isPending && <Loader2 className="mr-1 size-4 animate-spin" />}
               Submit Return
             </Button>
             <Button

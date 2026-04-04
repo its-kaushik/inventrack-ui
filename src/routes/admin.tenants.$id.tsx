@@ -75,9 +75,13 @@ function TenantDetailPage() {
   const [showExtendTrialDialog, setShowExtendTrialDialog] = useState(false)
   const [showChangePlanDialog, setShowChangePlanDialog] = useState(false)
   const [trialDays, setTrialDays] = useState(7)
-  const [selectedPlan, setSelectedPlan] = useState<string>('basic')
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'basic' | 'pro'>('basic')
 
-  const { data: tenant, isLoading: tenantLoading, error: tenantError } = useQuery({
+  const {
+    data: tenant,
+    isLoading: tenantLoading,
+    error: tenantError,
+  } = useQuery({
     queryKey: queryKeys.admin.tenants.detail(id),
     queryFn: () => getTenantDetail(id).then((res) => res.data),
   })
@@ -96,13 +100,19 @@ function TenantDetailPage() {
 
   const suspendMutation = useMutation({
     mutationFn: () => suspendTenant(id),
-    onSuccess: () => { toast.success('Tenant suspended'); invalidateAll() },
+    onSuccess: () => {
+      toast.success('Tenant suspended')
+      invalidateAll()
+    },
     onError: () => toast.error('Failed to suspend tenant'),
   })
 
   const activateMutation = useMutation({
     mutationFn: () => activateTenant(id),
-    onSuccess: () => { toast.success('Tenant activated'); invalidateAll() },
+    onSuccess: () => {
+      toast.success('Tenant activated')
+      invalidateAll()
+    },
     onError: () => toast.error('Failed to activate tenant'),
   })
 
@@ -117,7 +127,7 @@ function TenantDetailPage() {
   })
 
   const changePlanMutation = useMutation({
-    mutationFn: (plan: string) => changePlan(id, plan),
+    mutationFn: (plan: 'free' | 'basic' | 'pro') => changePlan(id, plan),
     onSuccess: () => {
       toast.success('Plan changed')
       setShowChangePlanDialog(false)
@@ -152,24 +162,21 @@ function TenantDetailPage() {
     <div className="space-y-6">
       {/* Back button + Header */}
       <div>
-        <Link to="/admin/tenants" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3">
+        <Link
+          to="/admin/tenants"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3"
+        >
           <ArrowLeft className="size-4" />
           Back to Tenants
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">{tenant.name}</h1>
-          <StatusBadge variant={STATUS_VARIANT[tenant.status]}>
-            {tenant.status}
-          </StatusBadge>
-          <StatusBadge variant={PLAN_VARIANT[tenant.plan]}>
-            {tenant.plan}
-          </StatusBadge>
+          <StatusBadge variant={STATUS_VARIANT[tenant.status]}>{tenant.status}</StatusBadge>
+          <StatusBadge variant={PLAN_VARIANT[tenant.plan]}>{tenant.plan}</StatusBadge>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Created: {formatDate(tenant.createdAt)}
-          {tenant.trialEndsAt && (
-            <> &middot; Trial ends: {formatDate(tenant.trialEndsAt)}</>
-          )}
+          {tenant.trialEndsAt && <> &middot; Trial ends: {formatDate(tenant.trialEndsAt)}</>}
         </p>
       </div>
 
@@ -312,30 +319,20 @@ function TenantDetailPage() {
               onClick={() => setShowSuspendDialog(true)}
               disabled={suspendMutation.isPending}
             >
-              {suspendMutation.isPending ? (
-                <Loader2 className="mr-1 size-4 animate-spin" />
-              ) : null}
+              {suspendMutation.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
               Suspend Tenant
             </Button>
           )}
 
           {tenant.status === 'suspended' && (
-            <Button
-              onClick={() => activateMutation.mutate()}
-              disabled={activateMutation.isPending}
-            >
-              {activateMutation.isPending ? (
-                <Loader2 className="mr-1 size-4 animate-spin" />
-              ) : null}
+            <Button onClick={() => activateMutation.mutate()} disabled={activateMutation.isPending}>
+              {activateMutation.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
               Activate Tenant
             </Button>
           )}
 
           {tenant.status === 'trial' && (
-            <Button
-              variant="outline"
-              onClick={() => setShowExtendTrialDialog(true)}
-            >
+            <Button variant="outline" onClick={() => setShowExtendTrialDialog(true)}>
               Extend Trial
             </Button>
           )}
@@ -405,7 +402,10 @@ function TenantDetailPage() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <Label>Select plan</Label>
-            <RadioGroup value={selectedPlan} onValueChange={setSelectedPlan}>
+            <RadioGroup
+              value={selectedPlan}
+              onValueChange={(v) => setSelectedPlan(v as 'free' | 'basic' | 'pro')}
+            >
               {(['free', 'basic', 'pro'] as const).map((plan) => (
                 <div key={plan} className="flex items-center gap-3">
                   <RadioGroupItem value={plan} />

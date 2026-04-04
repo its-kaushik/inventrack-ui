@@ -6,8 +6,8 @@ export interface AuditLogFilters {
   user_id?: string
   action?: string
   entity_type?: string
-  date_from?: string
-  date_to?: string
+  from?: string
+  to?: string
   limit?: number
   offset?: number
 }
@@ -20,5 +20,5 @@ export function listAuditLogs(filters?: AuditLogFilters) {
     })
   }
   const qs = params.toString()
-  return apiGet<PaginatedResponse<AuditLogEntry>>(`/audit${qs ? `?${qs}` : ''}`)
+  return apiGet<PaginatedResponse<AuditLogEntry>>(`/audit-logs${qs ? `?${qs}` : ''}`)
 }

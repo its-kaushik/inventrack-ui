@@ -1,21 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, Building2, Users, DollarSign, Clock, AlertTriangle } from 'lucide-react'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts'
 import { queryKeys } from '@/api/query-keys'
 import { getAdminDashboard } from '@/api/admin.api'
 import { KpiCard } from '@/components/data/kpi-card'
 import { StatusBadge } from '@/components/data/status-badge'
-import { formatRelative } from '@/lib/format-date'
 import { formatCompact } from '@/lib/format-currency'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { TenantStatus, SubscriptionPlan } from '@/types/enums'
@@ -67,127 +56,66 @@ function AdminDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           icon={Building2}
-          label="Total Tenants"
-          value={data.totalTenants}
-        />
-        <KpiCard
-          icon={Building2}
           label="Active Tenants"
-          value={data.activeTenants}
+          value={data.tenantsByStatus?.active ?? 0}
         />
-        <KpiCard
-          icon={Users}
-          label="Total Users"
-          value={data.totalUsers}
-        />
+        <KpiCard icon={Building2} label="Signups This Month" value={data.signupsThisMonth} />
+        <KpiCard icon={Users} label="Total Users" value={data.totalUsers} />
         <KpiCard
           icon={DollarSign}
-          label="Total Revenue"
-          value={formatCompact(data.totalRevenue)}
+          label="Bills This Month"
+          value={formatCompact(data.billsThisMonth)}
         />
       </div>
 
-      {/* Growth Chart */}
+      {/* Plan Distribution */}
       <Card>
         <CardHeader>
-          <CardTitle>Growth Trend</CardTitle>
+          <CardTitle>Tenants by Plan</CardTitle>
         </CardHeader>
         <CardContent>
-          {data.growthData.length > 0 ? (
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.growthData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 12 }}
-                    className="text-muted-foreground"
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    tick={{ fontSize: 12 }}
-                    className="text-muted-foreground"
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(v: number) => formatCompact(v)}
-                    className="text-muted-foreground"
-                  />
-                  <Tooltip
-                    formatter={(value, name) =>
-                      name === 'Revenue' ? formatCompact(Number(value ?? 0)) : value
-                    }
-                  />
-                  <Legend />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="tenants"
-                    stroke="rgb(59, 130, 246)"
-                    strokeWidth={2}
-                    dot={false}
-                    name="Tenants"
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="rgb(34, 197, 94)"
-                    strokeWidth={2}
-                    dot={false}
-                    name="Revenue"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+          {data.tenantsByPlan ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {Object.entries(data.tenantsByPlan).map(([plan, count]) => (
+                <div
+                  key={plan}
+                  className="flex items-center justify-between rounded-lg border px-4 py-3"
+                >
+                  <StatusBadge variant={PLAN_VARIANT[plan as SubscriptionPlan] ?? 'default'}>
+                    {plan}
+                  </StatusBadge>
+                  <span className="text-lg font-semibold">{count}</span>
+                </div>
+              ))}
             </div>
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No growth data available yet.
+              No plan data available yet.
             </p>
           )}
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent Signups */}
-        <Card className="lg:col-span-2">
+      {/* Status Distribution */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
           <CardHeader>
-            <CardTitle>Recent Signups</CardTitle>
+            <CardTitle>Tenants by Status</CardTitle>
           </CardHeader>
           <CardContent>
-            {data.recentSignups.length > 0 ? (
-              <div className="space-y-2">
-                {data.recentSignups.map((tenant) => (
-                  <Link
-                    key={tenant.id}
-                    to="/admin/tenants/$id"
-                    params={{ id: tenant.id }}
-                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{tenant.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {tenant.ownerName} &middot; {formatRelative(tenant.createdAt)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge variant={PLAN_VARIANT[tenant.plan]}>
-                        {tenant.plan}
-                      </StatusBadge>
-                      <StatusBadge variant={STATUS_VARIANT[tenant.status]}>
-                        {tenant.status}
-                      </StatusBadge>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No signups yet.
-              </p>
-            )}
+            <div className="space-y-3">
+              {Object.entries(data.tenantsByStatus ?? {}).map(([status, count]) => (
+                <div
+                  key={status}
+                  className="flex items-center justify-between rounded-lg border px-4 py-3"
+                >
+                  <StatusBadge variant={STATUS_VARIANT[status as TenantStatus] ?? 'default'}>
+                    {status}
+                  </StatusBadge>
+                  <span className="text-lg font-semibold">{count}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -199,8 +127,8 @@ function AdminDashboardPage() {
                 <Clock className="size-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Active Trials</p>
-                <p className="text-xl font-semibold">{data.trialTenants}</p>
+                <p className="text-xs text-muted-foreground">Signups This Month</p>
+                <p className="text-xl font-semibold">{data.signupsThisMonth}</p>
               </div>
             </CardContent>
           </Card>
@@ -212,9 +140,7 @@ function AdminDashboardPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Suspended</p>
-                <p className="text-xl font-semibold">
-                  {data.totalTenants - data.activeTenants - data.trialTenants}
-                </p>
+                <p className="text-xl font-semibold">{data.tenantsByStatus?.suspended ?? 0}</p>
               </div>
             </CardContent>
           </Card>
