@@ -16,7 +16,9 @@ export function useScanner({
   const bufferRef = useRef('')
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const onScanRef = useRef(onScan)
-  onScanRef.current = onScan
+  useEffect(() => {
+    onScanRef.current = onScan
+  }, [onScan])
 
   const flush = useCallback(() => {
     const barcode = bufferRef.current.trim()

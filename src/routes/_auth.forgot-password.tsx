@@ -47,7 +47,7 @@ function ForgotPasswordPage() {
     try {
       await forgotPassword(data.phone)
       setIsSuccess(true)
-    } catch (error) {
+    } catch {
       // Always show success message to prevent phone number enumeration
       setIsSuccess(true)
     } finally {
@@ -68,8 +68,7 @@ function ForgotPasswordPage() {
             <div className="space-y-1">
               <p className="font-medium">Check your messages</p>
               <p className="text-sm text-muted-foreground">
-                If an account exists with that phone number, you'll receive a
-                reset link.
+                If an account exists with that phone number, you'll receive a reset link.
               </p>
             </div>
             <Link
@@ -95,17 +94,11 @@ function ForgotPasswordPage() {
       <Card>
         <CardHeader>
           <CardTitle>Forgot Password</CardTitle>
-          <CardDescription>
-            Enter your phone number and we'll send you a reset link
-          </CardDescription>
+          <CardDescription>Enter your phone number and we'll send you a reset link</CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form
-            id="forgot-password-form"
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4"
-          >
+          <form id="forgot-password-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
@@ -120,11 +113,7 @@ function ForgotPasswordPage() {
                   {...register('phone')}
                 />
               </div>
-              {errors.phone && (
-                <p className="text-xs text-destructive">
-                  {errors.phone.message}
-                </p>
-              )}
+              {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
             </div>
           </form>
         </CardContent>

@@ -54,14 +54,11 @@ function SupplierListPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [payDialogOpen, setPayDialogOpen] = useState(false)
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
-    null,
-  )
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
 
   const { data: suppliers = [], isLoading } = useQuery({
     queryKey: queryKeys.suppliers.list({ search: search || undefined }),
-    queryFn: () =>
-      listSuppliers(search || undefined).then((res) => res.data),
+    queryFn: () => listSuppliers(search || undefined).then((res) => res.data),
   })
 
   const {
@@ -104,9 +101,7 @@ function SupplierListPage() {
       reset()
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to record payment.',
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to record payment.')
     },
   })
 
@@ -137,11 +132,7 @@ function SupplierListPage() {
         render: (s) => (
           <div>
             <p className="font-medium">{s.name}</p>
-            {s.gstin && (
-              <p className="text-xs text-muted-foreground">
-                GSTIN: {s.gstin}
-              </p>
-            )}
+            {s.gstin && <p className="text-xs text-muted-foreground">GSTIN: {s.gstin}</p>}
           </div>
         ),
       },
@@ -164,12 +155,7 @@ function SupplierListPage() {
         className: 'text-right',
         render: (s) => {
           const bal = parseFloat(s.outstandingBalance ?? '0')
-          return (
-            <Amount
-              value={bal}
-              className={bal > 0 ? 'text-red-600 dark:text-red-400' : ''}
-            />
-          )
+          return <Amount value={bal} className={bal > 0 ? 'text-red-600 dark:text-red-400' : ''} />
         },
       },
       {
@@ -178,11 +164,7 @@ function SupplierListPage() {
         render: (s) => {
           const bal = parseFloat(s.outstandingBalance ?? '0')
           return bal > 0 ? (
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={(e) => openPayDialog(s, e)}
-            >
+            <Button variant="outline" size="xs" onClick={(e) => openPayDialog(s, e)}>
               <IndianRupee className="mr-0.5 size-3" />
               Quick Pay
             </Button>
@@ -190,7 +172,7 @@ function SupplierListPage() {
         },
       },
     ],
-    [],
+    [openPayDialog],
   )
 
   const mobileCard = useCallback(
@@ -209,18 +191,10 @@ function SupplierListPage() {
               <div className="flex flex-col items-end gap-1">
                 <Amount
                   value={bal}
-                  className={
-                    bal > 0
-                      ? 'text-sm text-red-600 dark:text-red-400'
-                      : 'text-sm'
-                  }
+                  className={bal > 0 ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm'}
                 />
                 {bal > 0 && (
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={(e) => openPayDialog(supplier, e)}
-                  >
+                  <Button variant="outline" size="xs" onClick={(e) => openPayDialog(supplier, e)}>
                     Quick Pay
                   </Button>
                 )}
@@ -230,7 +204,7 @@ function SupplierListPage() {
         </Card>
       )
     },
-    [],
+    [openPayDialog],
   )
 
   const isEmpty = !isLoading && suppliers.length === 0 && !search
@@ -283,33 +257,20 @@ function SupplierListPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Quick Pay — {selectedSupplier?.name}</DialogTitle>
-            <DialogDescription>
-              Record a payment to this supplier.
-            </DialogDescription>
+            <DialogDescription>Record a payment to this supplier.</DialogDescription>
           </DialogHeader>
 
-          <form
-            onSubmit={handleSubmit(onPaySubmit)}
-            className="space-y-4"
-          >
+          <form onSubmit={handleSubmit(onPaySubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <Label>Amount *</Label>
               <Controller
                 control={control}
                 name="amount"
                 render={({ field }) => (
-                  <CurrencyInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="0"
-                  />
+                  <CurrencyInput value={field.value} onChange={field.onChange} placeholder="0" />
                 )}
               />
-              {errors.amount && (
-                <p className="text-xs text-destructive">
-                  {errors.amount.message}
-                </p>
-              )}
+              {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -318,19 +279,14 @@ function SupplierListPage() {
                 control={control}
                 name="paymentMode"
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(val) => field.onChange(val)}
-                  >
+                  <Select value={field.value} onValueChange={(val) => field.onChange(val)}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select mode" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="bank_transfer">
-                        Bank Transfer
-                      </SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                       <SelectItem value="cheque">Cheque</SelectItem>
                       <SelectItem value="card">Card</SelectItem>
                     </SelectContent>
@@ -350,11 +306,7 @@ function SupplierListPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="pay-notes">Description</Label>
-              <Input
-                id="pay-notes"
-                placeholder="Optional note"
-                {...register('description')}
-              />
+              <Input id="pay-notes" placeholder="Optional note" {...register('description')} />
             </div>
 
             <DialogFooter>
