@@ -64,4 +64,50 @@ export const queryKeys = {
   labels: {
     templates: () => ['labels', 'templates'] as const,
   },
+  purchaseOrders: {
+    all: () => ['purchase-orders'] as const,
+    list: (filters: Record<string, unknown>) => ['purchase-orders', 'list', filters] as const,
+    detail: (id: string) => ['purchase-orders', id] as const,
+  },
+  purchaseReturns: {
+    all: () => ['purchase-returns'] as const,
+    list: (filters: Record<string, unknown>) => ['purchase-returns', 'list', filters] as const,
+    detail: (id: string) => ['purchase-returns', id] as const,
+  },
+  stockAdjustments: {
+    all: () => ['stock-adjustments'] as const,
+    list: (filters: Record<string, unknown>) =>
+      ['stock-adjustments', 'list', filters] as const,
+  },
+  stockAudits: {
+    all: () => ['stock-audits'] as const,
+    list: (filters: Record<string, unknown>) => ['stock-audits', 'list', filters] as const,
+    detail: (id: string) => ['stock-audits', id] as const,
+  },
+  expenses: {
+    all: () => ['expenses'] as const,
+    list: (filters: Record<string, unknown>) => ['expenses', 'list', filters] as const,
+    detail: (id: string) => ['expenses', id] as const,
+    categories: () => ['expenses', 'categories'] as const,
+  },
+  sales: {
+    overview: (params: Record<string, unknown>) => ['sales', 'overview', params] as const,
+  },
+  gst: {
+    dashboard: (params: Record<string, unknown>) => ['gst', 'dashboard', params] as const,
+    returnData: (returnType: string, params: Record<string, unknown>) =>
+      ['gst', returnType, params] as const,
+    itc: (filters: Record<string, unknown>) => ['gst', 'itc', filters] as const,
+  },
+  pnl: {
+    data: (params: Record<string, unknown>) => ['pnl', params] as const,
+  },
+  reports: {
+    data: (type: string, filters: Record<string, unknown>) =>
+      ['reports', type, filters] as const,
+  },
+  audit: {
+    all: () => ['audit'] as const,
+    list: (filters: Record<string, unknown>) => ['audit', 'list', filters] as const,
+  },
 }

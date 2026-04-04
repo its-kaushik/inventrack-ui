@@ -10,6 +10,8 @@ import {
   Factory,
   Calculator,
   Settings,
+  FileText,
+  Banknote,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -58,6 +60,8 @@ function getTabsForRole(role: string): { tabs: TabItem[]; moreItems: MoreItem[] 
       { label: 'Purchases', icon: Truck, href: '/purchases/receive' },
       { label: 'Suppliers', icon: Factory, href: '/suppliers' },
       { label: 'Accounting', icon: Calculator, href: '/accounting/cash' },
+      { label: 'Reports', icon: FileText, href: '/reports' },
+      { label: 'Expenses', icon: Banknote, href: '/accounting/expenses' },
       ...(role === 'owner'
         ? [{ label: 'Settings', icon: Settings, href: '/settings' }]
         : []),

@@ -10,6 +10,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  BarChart3,
+  Receipt,
+  Banknote,
+  TrendingUp,
+  FileText,
+  ScrollText,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -81,6 +87,42 @@ const navItems: NavItem[] = [
     icon: Calculator,
     href: '/accounting/cash',
     roles: ['owner', 'manager'],
+  },
+  {
+    label: 'Sales Overview',
+    icon: BarChart3,
+    href: '/accounting/sales',
+    roles: ['owner', 'manager'],
+  },
+  {
+    label: 'GST',
+    icon: Receipt,
+    href: '/accounting/gst',
+    roles: ['owner', 'manager'],
+  },
+  {
+    label: 'Expenses',
+    icon: Banknote,
+    href: '/accounting/expenses',
+    roles: ['owner', 'manager'],
+  },
+  {
+    label: 'P&L',
+    icon: TrendingUp,
+    href: '/accounting/pnl',
+    roles: ['owner', 'manager'],
+  },
+  {
+    label: 'Reports',
+    icon: FileText,
+    href: '/reports',
+    roles: ['owner', 'manager'],
+  },
+  {
+    label: 'Audit Log',
+    icon: ScrollText,
+    href: '/audit',
+    roles: ['owner'],
   },
   {
     label: 'Settings',

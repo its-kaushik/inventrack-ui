@@ -1,13 +1,17 @@
+import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Printer, Receipt } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { ArrowLeft, Printer, Receipt, Ban } from 'lucide-react'
 import { queryKeys } from '@/api/query-keys'
-import { getBill } from '@/api/bills.api'
+import { getBill, voidBill } from '@/api/bills.api'
 import type { Bill } from '@/types/models'
 import type { PaymentMode } from '@/types/enums'
+import { useAuthStore } from '@/stores/auth.store'
 import { Amount } from '@/components/data/amount'
 import { StatusBadge } from '@/components/data/status-badge'
 import { Skeleton } from '@/components/data/loading-skeleton'
+import { ConfirmDialog } from '@/components/feedback/confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -51,10 +55,27 @@ function getStatusVariant(
 
 function BillDetailPage() {
   const { id } = Route.useParams()
+  const queryClient = useQueryClient()
+  const user = useAuthStore((s) => s.user)
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false)
+
+  const canVoid = user?.role === 'owner' || user?.role === 'manager'
 
   const { data: bill, isLoading } = useQuery({
     queryKey: queryKeys.bills.detail(id),
     queryFn: () => getBill(id).then((res) => res.data),
+  })
+
+  const voidMutation = useMutation({
+    mutationFn: () => voidBill(id),
+    onSuccess: () => {
+      toast.success('Bill voided successfully')
+      queryClient.invalidateQueries({ queryKey: queryKeys.bills.detail(id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.bills.all() })
+    },
+    onError: () => {
+      toast.error('Failed to void bill')
+    },
   })
 
   const handlePrint = () => {
@@ -115,11 +136,34 @@ function BillDetailPage() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="mr-1 size-3.5" />
-            Reprint
-          </Button>
+          <div className="flex items-center gap-2">
+            {canVoid && bill.status !== 'voided' && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setVoidDialogOpen(true)}
+                disabled={voidMutation.isPending}
+              >
+                <Ban className="mr-1 size-3.5" />
+                Void Bill
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Printer className="mr-1 size-3.5" />
+              Reprint
+            </Button>
+          </div>
         </div>
+
+        {/* Voided banner */}
+        {bill.status === 'voided' && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+            <Ban className="size-5 shrink-0" />
+            <span className="text-sm font-semibold">
+              This bill has been voided and is no longer valid.
+            </span>
+          </div>
+        )}
 
         {/* Customer info */}
         {bill.customer && (
@@ -310,6 +354,17 @@ function BillDetailPage() {
 
       {/* Print-ready receipt layout */}
       <PrintReceipt bill={bill} />
+
+      {/* Void confirm dialog */}
+      <ConfirmDialog
+        open={voidDialogOpen}
+        onOpenChange={setVoidDialogOpen}
+        title="Void this bill?"
+        description="This action cannot be undone. The bill will be marked as voided and inventory will be restored."
+        confirmLabel="Void Bill"
+        destructive
+        onConfirm={() => voidMutation.mutate()}
+      />
     </>
   )
 }

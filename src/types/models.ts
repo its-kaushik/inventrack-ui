@@ -5,6 +5,11 @@ import type {
   GstScheme,
   StockStatus,
   CashRegisterStatus,
+  POStatus,
+  AdjustmentReason,
+  AuditAction,
+  EntityType,
+  ReportType,
 } from './enums'
 
 export interface Tenant {
@@ -287,4 +292,196 @@ export interface LabelItem {
   sellingPrice: string
   quantity: number
   barcodeDataUrl: string
+}
+
+// ── Phase 2: Purchase Orders ──────────────────────────
+
+export interface PurchaseOrder {
+  id: string
+  tenantId: string
+  supplierId: string
+  poNumber: string
+  status: POStatus
+  notes: string | null
+  totalAmount: string
+  createdAt: string
+  updatedAt: string
+  items?: PurchaseOrderItem[]
+  supplier?: Supplier
+}
+
+export interface PurchaseOrderItem {
+  id: string
+  purchaseOrderId: string
+  productId: string
+  quantity: number
+  expectedCostPrice: string
+  receivedQuantity?: number
+  product?: Product
+}
+
+// ── Phase 2: Purchase Returns ─────────────────────────
+
+export interface PurchaseReturn {
+  id: string
+  tenantId: string
+  purchaseId: string
+  supplierId: string
+  totalAmount: string
+  notes: string | null
+  createdAt: string
+  items?: PurchaseReturnItem[]
+  supplier?: Supplier
+  purchase?: Purchase
+}
+
+export interface PurchaseReturnItem {
+  id: string
+  purchaseReturnId: string
+  productId: string
+  quantity: number
+  costPrice: string
+  reason: string | null
+  product?: Product
+}
+
+// ── Phase 2: Stock Adjustments ────────────────────────
+
+export interface StockAdjustment {
+  id: string
+  tenantId: string
+  productId: string
+  userId: string
+  quantityChange: number
+  reason: AdjustmentReason
+  notes: string | null
+  createdAt: string
+  product?: Product
+  user?: User
+}
+
+// ── Phase 2: Stock Audits ─────────────────────────────
+
+export interface StockAudit {
+  id: string
+  tenantId: string
+  userId: string
+  status: 'in_progress' | 'completed'
+  createdAt: string
+  completedAt: string | null
+  lines?: StockAuditLine[]
+  user?: User
+}
+
+export interface StockAuditLine {
+  id: string
+  auditId: string
+  productId: string
+  expectedQuantity: number
+  countedQuantity: number
+  variance: number
+  product?: Product
+}
+
+// ── Phase 2: Expenses ─────────────────────────────────
+
+export interface Expense {
+  id: string
+  tenantId: string
+  userId: string
+  date: string
+  category: string
+  amount: string
+  description: string | null
+  isRecurring: boolean
+  receiptImageUrl: string | null
+  createdAt: string
+  user?: User
+}
+
+export interface ExpenseCategory {
+  id: string
+  name: string
+}
+
+// ── Phase 2: Sales & GST ──────────────────────────────
+
+export interface SalesOverviewData {
+  totalSales: number
+  totalBills: number
+  avgBillValue: number
+  trend: Array<{ date: string; amount: number; count: number }>
+  byCategory: Array<{ categoryId: string; categoryName: string; total: number; count: number }>
+  byBrand: Array<{ brandId: string; brandName: string; total: number; count: number }>
+  bySalesperson: Array<{ userId: string; userName: string; total: number; count: number }>
+}
+
+export interface GstDashboardData {
+  scheme: GstScheme
+  period: string
+  outputTax?: number
+  inputTaxCredit?: number
+  netLiability?: number
+  totalTurnover?: number
+  compositionTax?: number
+}
+
+export interface GstReturnData {
+  returnType: string
+  period: string
+  data: Array<Record<string, unknown>>
+  columns: Array<{ key: string; header: string }>
+}
+
+export interface ItcEntry {
+  id: string
+  purchaseId: string
+  supplierId: string
+  supplierName: string
+  invoiceNumber: string | null
+  invoiceDate: string | null
+  taxableAmount: string
+  cgst: string
+  sgst: string
+  igst: string
+  totalTax: string
+}
+
+// ── Phase 2: Profit & Loss ────────────────────────────
+
+export interface ProfitLossData {
+  period: { from: string; to: string }
+  revenue: number
+  cogs: number
+  grossProfit: number
+  expenses: Array<{ category: string; amount: number }>
+  totalExpenses: number
+  netProfit: number
+  byCategory?: Array<{ categoryName: string; revenue: number; cogs: number; profit: number }>
+}
+
+// ── Phase 2: Audit Log ────────────────────────────────
+
+export interface AuditLogEntry {
+  id: string
+  tenantId: string
+  userId: string
+  userName: string
+  action: AuditAction
+  entityType: EntityType
+  entityId: string
+  summary: string
+  oldValue: Record<string, unknown> | null
+  newValue: Record<string, unknown> | null
+  createdAt: string
+}
+
+// ── Phase 2: Reports ──────────────────────────────────
+
+export interface ReportData {
+  type: ReportType
+  title: string
+  columns: Array<{ key: string; header: string; align?: 'left' | 'right' }>
+  rows: Array<Record<string, unknown>>
+  summary?: Record<string, number>
 }

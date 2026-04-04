@@ -50,3 +50,7 @@ export function getBill(id: string) {
 export function getBillPrintData(id: string) {
   return apiGet<Bill>(`/bills/${id}/print`)
 }
+
+export function voidBill(id: string) {
+  return apiPost<Bill>(`/bills/${id}/void`)
+}
