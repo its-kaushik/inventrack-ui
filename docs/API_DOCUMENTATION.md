@@ -69,6 +69,26 @@ Response includes `meta.has_more` to indicate if there are more items.
 
 All request bodies must be `Content-Type: application/json`.
 
+### Rate Limiting
+
+- **Login:** 5 requests per minute per IP
+- **Global:** 100 requests per second per tenant
+- On rate limit: returns `429 Too Many Requests` with a `Retry-After` header (seconds)
+
+### Health Check
+
+`GET /health` — Returns server health status.
+
+**Response (200):**
+```json
+{ "status": "ok", "db": true, "redis": true }
+```
+
+**Response (503):** Returned when database or Redis is unreachable.
+```json
+{ "status": "degraded", "db": false, "redis": true }
+```
+
 ---
 
 ## 2. Authentication
@@ -503,7 +523,7 @@ Fast POS search — exact match on barcode/SKU, then fuzzy name search.
 |-------|------|-------------|
 | q | string | Search query (barcode, SKU, or product name) |
 
-**Response:** Array of matching products (max 20). Exact barcode/SKU matches returned first.
+**Response:** Array of matching products (max 20). Exact barcode/SKU matches returned first. Each result includes a `similarity` score field (0–1) indicating match quality.
 
 ---
 
@@ -583,6 +603,32 @@ Generate barcode PNG image for a product.
 
 Bulk product import. (Phase 1: stub — returns "coming soon")
 
+### `GET /products/import/:jobId/status`
+
+Check the progress of a bulk import job.
+
+**Auth:** Required (owner/manager)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "jobId": "uuid",
+    "status": "processing",
+    "progress": 65,
+    "errors": ["Row 12: Invalid SKU format"]
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| jobId | string | Import job ID |
+| status | string | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
+| progress | number | 0–100 completion percentage |
+| errors | string[] | Optional. Validation errors per row |
+
 ---
 
 ## 8. Stock
@@ -632,7 +678,11 @@ Stock movement history (chronological entries showing each stock in/out).
 
 ### `POST /labels/generate`
 
-Generate barcode label data for printing.
+Generate barcode labels for printing.
+
+**Default behavior:** Returns `text/html` — a print-ready HTML page that can be rendered in an iframe or new window and printed directly.
+
+**To get JSON response:** Include `"format": "json"` in the request body.
 
 **Request Body:**
 ```json
@@ -641,11 +691,18 @@ Generate barcode label data for printing.
     { "productId": "uuid", "quantity": 50 },
     { "productId": "uuid", "quantity": 30 }
   ],
-  "templateId": "default"
+  "templateId": "default",
+  "format": "json"
 }
 ```
 
-**Response:**
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| items | array | Yes | Min 1. Each: `{ productId: uuid, quantity: int > 0 }` |
+| templateId | string | No | Default: `"default"` |
+| format | string | No | `"json"` for JSON response, omit for HTML (default) |
+
+**Response (with `format: "json"`):**
 ```json
 {
   "success": true,
@@ -665,6 +722,8 @@ Generate barcode label data for printing.
   }
 }
 ```
+
+**Response (without `format`, default):** `Content-Type: text/html` — a complete HTML page with barcode labels ready for `window.print()`.
 
 ### `GET /labels/templates`
 
@@ -1068,11 +1127,16 @@ Returns role-dependent aggregated data. Cached in Redis for 30 seconds.
   "success": true,
   "data": {
     "todaySales": { "total": 24500, "count": 12, "yesterdayTotal": 21800 },
+    "todayProfit": 8500,
+    "cashInHand": 15650,
     "outstandingReceivables": 145000,
     "outstandingPayables": 89000,
     "lowStockCount": 5,
+    "agingInventoryCount": 23,
     "recentBills": [ { "id": "...", "billNumber": "KVB-2026-00042", "netAmount": "750.00", "createdAt": "..." } ],
-    "paymentModeSplit": { "cash": 12000, "upi": 8500, "card": 4000 }
+    "paymentModeSplit": { "cash": 12000, "upi": 8500, "card": 4000 },
+    "topSellers": [ { "productId": "uuid", "productName": "Rupa RN Vest - L", "quantitySold": 45, "revenue": 15750 } ],
+    "supplierPaymentsDue": [ { "supplierId": "uuid", "supplierName": "Rupa & Co", "amount": 25000, "dueDate": "2026-04-15" } ]
   }
 }
 ```
@@ -1143,4 +1207,4 @@ Get a presigned S3 URL for direct file upload. The frontend uploads directly to 
 
 ---
 
-*72 endpoints total across 15 route groups. Phase 1 complete.*
+*74 endpoints total across 15 route groups + health check. Phase 1 complete.*
