@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { routeTree } from './routeTree.gen'
 import { useAuthStore } from '@/stores/auth.store'
 import { restoreSession } from '@/lib/session'
+import { setupReconnectSync } from '@/hooks/use-online'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,30 @@ function InnerApp() {
   useEffect(() => {
     restoreSession().finally(() => setIsRestoring(false))
   }, [])
+
+  useEffect(() => {
+    setupReconnectSync()
+  }, [])
+
+  // Notification polling
+  useEffect(() => {
+    if (!auth.isAuthenticated) return
+
+    const poll = async () => {
+      try {
+        const { getUnreadCount } = await import('@/api/notifications.api')
+        const { useNotificationStore } = await import('@/stores/notification.store')
+        const res = await getUnreadCount()
+        useNotificationStore.getState().setUnreadCount(res.data.count)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    poll() // immediate
+    const interval = setInterval(poll, 30000) // every 30s
+    return () => clearInterval(interval)
+  }, [auth.isAuthenticated])
 
   if (isRestoring) {
     return (

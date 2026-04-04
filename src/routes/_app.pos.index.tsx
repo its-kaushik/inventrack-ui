@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Search, ShoppingCart, History, X, ScanBarcode, Camera } from 'lucide-react'
+import { Search, ShoppingCart, History, X, ScanBarcode, Camera, Pause, ListRestart } from 'lucide-react'
+import { toast } from 'sonner'
 import { useCartStore, selectItemCount } from '@/stores/cart.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useProductSearch } from '@/hooks/use-product-search'
@@ -37,6 +38,8 @@ function PosBillingPage() {
 
   const items = useCartStore((s) => s.items)
   const addItem = useCartStore((s) => s.addItem)
+  const holdCurrentCart = useCartStore((s) => s.holdCurrentCart)
+  const heldBillsCount = useCartStore((s) => s.heldBills.length)
   const itemCount = useCartStore(selectItemCount)
 
   const { results, isLoading } = useProductSearch(searchQuery)
@@ -82,6 +85,13 @@ function PosBillingPage() {
     setPaymentOpen(false)
   }, [])
 
+  const handleHoldBill = useCallback(() => {
+    if (itemCount === 0) return
+    const note = window.prompt('Add a note for this held bill (optional):') ?? ''
+    holdCurrentCart(note)
+    toast.success('Bill held')
+  }, [itemCount, holdCurrentCart])
+
   // Keyboard shortcuts
   useKeyboardShortcut('F1', focusSearch)
   useKeyboardShortcut('F2', openPayment)
@@ -116,6 +126,9 @@ function PosBillingPage() {
           <DesktopHeader
             scanMode={scanMode}
             onScanModeChange={setScanMode}
+            onHold={handleHoldBill}
+            heldCount={heldBillsCount}
+            canHold={itemCount > 0}
           />
           {cameraOpen && (
             <div className="border-b p-3">
@@ -203,7 +216,14 @@ function PosBillingPage() {
   // Mobile: stacked layout
   return (
     <div className="flex h-full flex-col">
-      <MobileHeader itemCount={itemCount} scanMode={scanMode} onScanModeChange={setScanMode} />
+      <MobileHeader
+        itemCount={itemCount}
+        scanMode={scanMode}
+        onScanModeChange={setScanMode}
+        onHold={handleHoldBill}
+        heldCount={heldBillsCount}
+        canHold={itemCount > 0}
+      />
       {cameraOpen && (
         <div className="border-b p-3">
           <CameraScanner onScan={handleCameraScan} onClose={() => setCameraOpen(false)} />
@@ -267,9 +287,15 @@ function PosBillingPage() {
 function DesktopHeader({
   scanMode,
   onScanModeChange,
+  onHold,
+  heldCount,
+  canHold,
 }: {
   scanMode: 'type' | 'scan'
   onScanModeChange: (mode: 'type' | 'scan') => void
+  onHold: () => void
+  heldCount: number
+  canHold: boolean
 }) {
   return (
     <div className="flex items-center justify-between border-b px-4 py-2">
@@ -286,6 +312,27 @@ function DesktopHeader({
           <ScanBarcode className="mr-1 size-3.5" />
           {scanMode === 'scan' ? 'Scan Mode' : 'Type Mode'}
         </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onHold}
+          disabled={!canHold}
+          title="Hold current bill"
+        >
+          <Pause className="mr-1 size-3.5" />
+          Hold
+        </Button>
+        <Link to="/pos/held">
+          <Button variant="ghost" size="sm" className="relative">
+            <ListRestart className="mr-1 size-3.5" />
+            Recall
+            {heldCount > 0 && (
+              <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 py-0">
+                {heldCount}
+              </Badge>
+            )}
+          </Button>
+        </Link>
         <Link to="/pos/bills">
           <Button variant="ghost" size="sm">
             <History className="mr-1 size-3.5" />
@@ -301,10 +348,16 @@ function MobileHeader({
   itemCount,
   scanMode,
   onScanModeChange,
+  onHold,
+  heldCount,
+  canHold,
 }: {
   itemCount: number
   scanMode: 'type' | 'scan'
   onScanModeChange: (mode: 'type' | 'scan') => void
+  onHold: () => void
+  heldCount: number
+  canHold: boolean
 }) {
   return (
     <div className="flex items-center justify-between border-b px-4 py-2">
@@ -321,6 +374,28 @@ function MobileHeader({
         >
           <ScanBarcode className="size-4" />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title="Hold current bill"
+          onClick={onHold}
+          disabled={!canHold}
+        >
+          <Pause className="size-4" />
+        </Button>
+        <Link to="/pos/held">
+          <Button variant="ghost" size="icon-sm" className="relative">
+            <ListRestart className="size-4" />
+            {heldCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -right-1 -top-1 text-[10px] px-1 py-0 min-w-4 h-4"
+              >
+                {heldCount}
+              </Badge>
+            )}
+          </Button>
+        </Link>
         <Link to="/pos/bills">
           <Button variant="ghost" size="icon-sm">
             <History className="size-4" />

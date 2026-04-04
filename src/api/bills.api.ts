@@ -54,3 +54,7 @@ export function getBillPrintData(id: string) {
 export function voidBill(id: string) {
   return apiPost<Bill>(`/bills/${id}/void`)
 }
+
+export function syncBills(bills: Array<{ clientId: string; payload: unknown }>) {
+  return apiPost<{ synced: string[]; conflicts: Array<{ clientId: string; error: string }> }>('/bills/sync', { bills })
+}

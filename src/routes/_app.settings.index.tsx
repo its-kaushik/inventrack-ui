@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Store, Users, Tag } from 'lucide-react'
+import { Store, Users, Tag, Sliders, FileText } from 'lucide-react'
 import {
   Card,
   CardHeader,
@@ -29,6 +29,18 @@ const settingsCards = [
     description: 'Configure product categories, size systems, and brands.',
     icon: Tag,
     to: '/settings/categories' as const,
+  },
+  {
+    title: 'Thresholds',
+    description: 'Configure stock, aging, and discount limits.',
+    icon: Sliders,
+    to: '/settings/thresholds' as const,
+  },
+  {
+    title: 'Templates',
+    description: 'Customize receipt and label templates.',
+    icon: FileText,
+    to: '/settings/templates' as const,
   },
 ]
 

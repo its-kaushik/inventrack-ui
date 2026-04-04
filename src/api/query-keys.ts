@@ -110,4 +110,11 @@ export const queryKeys = {
     all: () => ['audit'] as const,
     list: (filters: Record<string, unknown>) => ['audit', 'list', filters] as const,
   },
+  returns: {
+    returnable: (billId: string) => ['returns', 'returnable', billId] as const,
+  },
+  notifications: {
+    unreadCount: () => ['notifications', 'unread-count'] as const,
+    list: (filters: Record<string, unknown>) => ['notifications', 'list', filters] as const,
+  },
 }

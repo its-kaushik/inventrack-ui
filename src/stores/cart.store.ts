@@ -8,11 +8,22 @@ export interface CartItem {
   lineTotal: number
 }
 
+export interface HeldBill {
+  id: string
+  items: CartItem[]
+  customerId: string | null
+  additionalDiscountAmount: number
+  additionalDiscountPct: number
+  note: string
+  heldAt: string
+}
+
 interface CartState {
   items: CartItem[]
   customerId: string | null
   additionalDiscountAmount: number
   additionalDiscountPct: number
+  heldBills: HeldBill[]
 
   addItem: (product: Product) => void
   removeItem: (productId: string) => void
@@ -20,6 +31,9 @@ interface CartState {
   setCustomer: (id: string | null) => void
   setAdditionalDiscount: (amount: number, pct: number) => void
   clear: () => void
+  holdCurrentCart: (note?: string) => void
+  resumeHeldBill: (id: string) => void
+  discardHeldBill: (id: string) => void
 }
 
 function calcLineTotal(sellingPrice: number, catalogDiscountPct: number, quantity: number): number {
@@ -37,11 +51,14 @@ function snapshotFromProduct(product: Product): ProductSnapshot {
   }
 }
 
-export const useCartStore = create<CartState>((set) => ({
+const HELD_BILLS_KEY = 'inventrack-held-bills'
+
+export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   customerId: null,
   additionalDiscountAmount: 0,
   additionalDiscountPct: 0,
+  heldBills: JSON.parse(localStorage.getItem(HELD_BILLS_KEY) ?? '[]') as HeldBill[],
 
   addItem: (product) =>
     set((state) => {
@@ -117,6 +134,51 @@ export const useCartStore = create<CartState>((set) => ({
       additionalDiscountAmount: 0,
       additionalDiscountPct: 0,
     }),
+
+  holdCurrentCart: (note = '') => {
+    const state = get()
+    if (state.items.length === 0) return
+    const held: HeldBill = {
+      id: crypto.randomUUID(),
+      items: state.items,
+      customerId: state.customerId,
+      additionalDiscountAmount: state.additionalDiscountAmount,
+      additionalDiscountPct: state.additionalDiscountPct,
+      note,
+      heldAt: new Date().toISOString(),
+    }
+    const newHeldBills = [...state.heldBills, held]
+    localStorage.setItem(HELD_BILLS_KEY, JSON.stringify(newHeldBills))
+    set({
+      heldBills: newHeldBills,
+      items: [],
+      customerId: null,
+      additionalDiscountAmount: 0,
+      additionalDiscountPct: 0,
+    })
+  },
+
+  resumeHeldBill: (id) => {
+    const state = get()
+    const bill = state.heldBills.find((b) => b.id === id)
+    if (!bill) return
+    const newHeldBills = state.heldBills.filter((b) => b.id !== id)
+    localStorage.setItem(HELD_BILLS_KEY, JSON.stringify(newHeldBills))
+    set({
+      heldBills: newHeldBills,
+      items: bill.items,
+      customerId: bill.customerId,
+      additionalDiscountAmount: bill.additionalDiscountAmount,
+      additionalDiscountPct: bill.additionalDiscountPct,
+    })
+  },
+
+  discardHeldBill: (id) => {
+    const state = get()
+    const newHeldBills = state.heldBills.filter((b) => b.id !== id)
+    localStorage.setItem(HELD_BILLS_KEY, JSON.stringify(newHeldBills))
+    set({ heldBills: newHeldBills })
+  },
 }))
 
 // --- Computed selectors ---

@@ -16,3 +16,11 @@ function getSnapshot() {
 export function useOnline() {
   return useSyncExternalStore(subscribe, getSnapshot, () => true)
 }
+
+// Call this once from app root
+export function setupReconnectSync() {
+  window.addEventListener('online', async () => {
+    const { syncOfflineBills } = await import('@/lib/offline-bills')
+    syncOfflineBills()
+  })
+}

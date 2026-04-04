@@ -16,12 +16,14 @@ import {
   TrendingUp,
   FileText,
   ScrollText,
+  Bell,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRole } from '@/hooks/use-role'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { useNotificationStore } from '@/stores/notification.store'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -137,6 +139,7 @@ export function Sidebar() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
   const user = useAuthStore((s) => s.user)
+  const unreadCount = useNotificationStore((s) => s.unreadCount)
   const routerState = useRouterState()
   const pathname = routerState.location.pathname
 
@@ -149,17 +152,27 @@ export function Sidebar() {
         collapsed ? 'w-16' : 'w-64'
       )}
     >
-      {/* Logo */}
+      {/* Logo + Notification Bell */}
       <div
         className={cn(
           'flex h-14 items-center border-b border-sidebar-foreground/10 px-4',
-          collapsed && 'justify-center px-2'
+          collapsed ? 'justify-center px-2' : 'justify-between'
         )}
       >
         {collapsed ? (
           <span className="text-lg font-bold">IT</span>
         ) : (
           <span className="text-lg font-bold tracking-tight">InvenTrack</span>
+        )}
+        {!collapsed && (
+          <Link to="/notifications" className="relative">
+            <Bell className="size-5 text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Link>
         )}
       </div>
 

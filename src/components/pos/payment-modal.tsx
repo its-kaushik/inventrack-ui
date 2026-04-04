@@ -176,7 +176,7 @@ export function PaymentModal({ open, onOpenChange }: PaymentModalProps) {
     },
   })
 
-  const handleCompleteSale = useCallback(() => {
+  const handleCompleteSale = useCallback(async () => {
     const billData: CreateBillData = {
       items: items.map((item) => ({
         productId: item.productId,
@@ -194,6 +194,18 @@ export function PaymentModal({ open, onOpenChange }: PaymentModalProps) {
         additionalDiscountPct > 0 ? additionalDiscountPct : undefined,
       clientId: crypto.randomUUID(),
     }
+
+    const isOnline = navigator.onLine
+    if (!isOnline) {
+      // Queue bill offline
+      const { queueOfflineBill } = await import('@/lib/offline-bills')
+      await queueOfflineBill(billData)
+      toast.success('Bill saved offline — will sync when connected')
+      clearCart()
+      onOpenChange(false)
+      return
+    }
+
     billMutation.mutate(billData)
   }, [
     items,
@@ -202,6 +214,8 @@ export function PaymentModal({ open, onOpenChange }: PaymentModalProps) {
     additionalDiscountAmount,
     additionalDiscountPct,
     billMutation,
+    clearCart,
+    onOpenChange,
   ])
 
   return (

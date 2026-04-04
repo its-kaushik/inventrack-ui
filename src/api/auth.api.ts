@@ -34,6 +34,14 @@ export function getMe() {
   return apiGet<{ user: User; tenant: Tenant | null }>('/auth/me')
 }
 
+export function verifyOtp(phone: string, otp: string) {
+  return apiPost<{ accessToken: string; user: User }>('/auth/verify-otp', { phone, otp })
+}
+
+export function resendOtp(phone: string) {
+  return apiPost<void>('/auth/resend-otp', { phone })
+}
+
 // Convenience object export for hooks
 export const authApi = {
   login,
