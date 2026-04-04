@@ -96,6 +96,7 @@ function SetupWizardPage() {
 
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+  const tenant = useAuthStore((s) => s.tenant)
   const setTenant = useAuthStore((s) => s.setTenant)
 
   const completeMutation = useMutation({
@@ -141,6 +142,7 @@ function SetupWizardPage() {
       }
 
       await completeMutation.mutateAsync()
+      if (tenant) setTenant({ ...tenant, setupComplete: true })
       setIsComplete(true)
     } catch (error) {
       toast.error(
