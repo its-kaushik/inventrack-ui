@@ -27,7 +27,7 @@ import {
   getTenantUsage,
   suspendTenant,
   activateTenant,
-  extendTrial,
+  updateTenant,
   changePlan,
 } from '@/api/admin.api'
 import { KpiCard } from '@/components/data/kpi-card'
@@ -117,7 +117,7 @@ function TenantDetailPage() {
   })
 
   const extendTrialMutation = useMutation({
-    mutationFn: (days: number) => extendTrial(id, days),
+    mutationFn: () => updateTenant(id, {}),
     onSuccess: () => {
       toast.success('Trial extended')
       setShowExtendTrialDialog(false)
@@ -382,7 +382,7 @@ function TenantDetailPage() {
               Cancel
             </Button>
             <Button
-              onClick={() => extendTrialMutation.mutate(trialDays)}
+              onClick={() => extendTrialMutation.mutate()}
               disabled={extendTrialMutation.isPending || trialDays < 1}
             >
               {extendTrialMutation.isPending ? (
