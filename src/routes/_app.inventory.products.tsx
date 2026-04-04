@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useMemo, useCallback } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
@@ -76,25 +77,19 @@ function ProductListPage() {
     [search, categoryId, brandId],
   )
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: queryKeys.products.list(filters as Record<string, unknown>),
     queryFn: ({ pageParam = 0 }) =>
-      listProducts({ ...filters, offset: pageParam }).then((res) => res.data),
+      listProducts({ ...filters, offset: pageParam }).then((res) => ({
+        items: Array.isArray(res.data) ? res.data : [],
+        hasMore: res.meta?.has_more ?? false,
+      })),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) =>
       lastPage.hasMore ? (lastPageParam as number) + PAGE_SIZE : undefined,
   })
 
-  const allProducts = useMemo(
-    () => data?.pages.flatMap((page) => page.items) ?? [],
-    [data],
-  )
+  const allProducts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
 
   // Client-side stock filter
   const filteredProducts = useMemo(() => {
@@ -146,9 +141,7 @@ function ProductListPage() {
         key: 'sku',
         header: 'SKU',
         hideOnMobile: true,
-        render: (p) => (
-          <span className="font-mono text-xs">{p.sku}</span>
-        ),
+        render: (p) => <span className="font-mono text-xs">{p.sku}</span>,
       },
       {
         key: 'category',
@@ -160,8 +153,7 @@ function ProductListPage() {
         key: 'brand',
         header: 'Brand',
         hideOnMobile: true,
-        render: (p) =>
-          p.brandId ? (brandMap.get(p.brandId) ?? '-') : '-',
+        render: (p) => (p.brandId ? (brandMap.get(p.brandId) ?? '-') : '-'),
       },
       {
         key: 'size',
@@ -180,11 +172,7 @@ function ProductListPage() {
         key: 'stock',
         header: 'Stock',
         sortable: true,
-        render: (p) => (
-          <StatusBadge variant={getStockVariant(p)}>
-            {getStockLabel(p)}
-          </StatusBadge>
-        ),
+        render: (p) => <StatusBadge variant={getStockVariant(p)}>{getStockLabel(p)}</StatusBadge>,
       },
       {
         key: 'actions',
@@ -215,9 +203,7 @@ function ProductListPage() {
             </div>
             <div className="flex flex-col items-end gap-1">
               <Amount value={product.sellingPrice} className="text-sm" />
-              <StatusBadge variant={getStockVariant(product)}>
-                {getStockLabel(product)}
-              </StatusBadge>
+              <StatusBadge variant={getStockVariant(product)}>{getStockLabel(product)}</StatusBadge>
             </div>
           </div>
         </CardContent>

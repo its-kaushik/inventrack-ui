@@ -1,5 +1,6 @@
 import type { Product } from '@/types/models'
-import type { PaginatedResponse } from '@/types/api'
+// Note: GET /products returns data as Product[] directly (not PaginatedResponse)
+// Pagination info comes from meta.has_more in the ApiResponse envelope
 import { apiGet, apiPost, apiPut, apiDelete } from '@/api/client'
 
 export interface ProductFilters {
@@ -20,7 +21,7 @@ export function listProducts(filters?: ProductFilters) {
     })
   }
   const qs = params.toString()
-  return apiGet<PaginatedResponse<Product>>(`/products${qs ? `?${qs}` : ''}`)
+  return apiGet<Product[]>(`/products${qs ? `?${qs}` : ''}`)
 }
 
 // NOTE: The search endpoint may also return a `similarity` score field per result.
@@ -93,5 +94,7 @@ export function generateBarcode(id: string) {
 }
 
 export function getImportJobStatus(jobId: string) {
-  return apiGet<{ jobId: string; status: string; progress: number; errors?: string[] }>(`/products/import/${jobId}/status`)
+  return apiGet<{ jobId: string; status: string; progress: number; errors?: string[] }>(
+    `/products/import/${jobId}/status`,
+  )
 }

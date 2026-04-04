@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useMemo, useCallback } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -58,9 +59,7 @@ const auditLineSchema = z.object({
 })
 
 const auditSchema = z.object({
-  lines: z
-    .array(auditLineSchema)
-    .min(1, 'Add at least one product to audit'),
+  lines: z.array(auditLineSchema).min(1, 'Add at least one product to audit'),
 })
 
 type AuditFormValues = z.infer<typeof auditSchema>
@@ -75,9 +74,7 @@ function StockAuditPage() {
   // -- New Audit State --
   const [productSearch, setProductSearch] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(
-    undefined,
-  )
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined)
   const debouncedSearch = useDebounce(productSearch, 300)
 
   // -- History State --
@@ -109,11 +106,8 @@ function StockAuditPage() {
   )
 
   const { data: categoryProducts } = useQuery({
-    queryKey: queryKeys.products.list(
-      categoryProductFilters as unknown as Record<string, unknown>,
-    ),
-    queryFn: () =>
-      listProducts(categoryProductFilters).then((res) => res.data),
+    queryKey: queryKeys.products.list(categoryProductFilters as unknown as Record<string, unknown>),
+    queryFn: () => listProducts(categoryProductFilters).then((res) => res.data),
     enabled: !!categoryFilter,
   })
 
@@ -163,9 +157,10 @@ function StockAuditPage() {
 
   // Bulk add from category
   function handleAddCategory() {
-    if (!categoryProducts?.items) return
+    const products = Array.isArray(categoryProducts) ? categoryProducts : []
+    if (products.length === 0) return
     let added = 0
-    for (const product of categoryProducts.items) {
+    for (const product of products) {
       const exists = watchedLines.some((l) => l.productId === product.id)
       if (!exists) {
         append({
@@ -224,11 +219,7 @@ function StockAuditPage() {
       reset()
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to submit stock audit.',
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to submit stock audit.')
     },
   })
 
@@ -249,11 +240,7 @@ function StockAuditPage() {
       toast.success('Audit approved and stock adjusted.')
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to approve audit.',
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to approve audit.')
     },
   })
 
@@ -267,9 +254,7 @@ function StockAuditPage() {
   )
 
   const { data: historyData, isLoading: isLoadingHistory } = useQuery({
-    queryKey: queryKeys.stockAudits.list(
-      historyFilters as unknown as Record<string, unknown>,
-    ),
+    queryKey: queryKeys.stockAudits.list(historyFilters as unknown as Record<string, unknown>),
     queryFn: () => listStockAudits(historyFilters).then((res) => res.data),
   })
 
@@ -281,35 +266,25 @@ function StockAuditPage() {
       key: 'date',
       header: 'Date',
       render: (item) => (
-        <span className="text-sm">
-          {format(new Date(item.createdAt), 'dd MMM yyyy HH:mm')}
-        </span>
+        <span className="text-sm">{format(new Date(item.createdAt), 'dd MMM yyyy HH:mm')}</span>
       ),
     },
     {
       key: 'user',
       header: 'User',
-      render: (item) => (
-        <span className="text-sm">{item.user?.name ?? '-'}</span>
-      ),
+      render: (item) => <span className="text-sm">{item.user?.name ?? '-'}</span>,
       hideOnMobile: true,
     },
     {
       key: 'items',
       header: 'Items',
-      render: (item) => (
-        <span className="text-sm tabular-nums">
-          {item.lines?.length ?? 0}
-        </span>
-      ),
+      render: (item) => <span className="text-sm tabular-nums">{item.lines?.length ?? 0}</span>,
     },
     {
       key: 'status',
       header: 'Status',
       render: (item) => (
-        <StatusBadge
-          variant={item.status === 'completed' ? 'success' : 'warning'}
-        >
+        <StatusBadge variant={item.status === 'completed' ? 'success' : 'warning'}>
           {item.status === 'completed' ? 'Completed' : 'In Progress'}
         </StatusBadge>
       ),
@@ -324,9 +299,7 @@ function StockAuditPage() {
             size="icon-xs"
             onClick={(e) => {
               e.stopPropagation()
-              setExpandedAuditId(
-                expandedAuditId === item.id ? null : item.id,
-              )
+              setExpandedAuditId(expandedAuditId === item.id ? null : item.id)
             }}
           >
             {expandedAuditId === item.id ? (
@@ -367,9 +340,7 @@ function StockAuditPage() {
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <StatusBadge
-              variant={item.status === 'completed' ? 'success' : 'warning'}
-            >
+            <StatusBadge variant={item.status === 'completed' ? 'success' : 'warning'}>
               {item.status === 'completed' ? 'Completed' : 'In Progress'}
             </StatusBadge>
           </div>
@@ -389,14 +360,9 @@ function StockAuditPage() {
       </div>
 
       {/* Start New Audit */}
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <fieldset className="space-y-4 rounded-lg border p-4">
-          <legend className="px-2 text-sm font-semibold">
-            Start New Audit
-          </legend>
+          <legend className="px-2 text-sm font-semibold">Start New Audit</legend>
 
           {/* Product selection */}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -424,12 +390,8 @@ function StockAuditPage() {
                         onClick={() => handleAddProduct(product)}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {product.sku}
-                          </p>
+                          <p className="truncate font-medium">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">{product.sku}</p>
                         </div>
                         <span className="shrink-0 text-xs text-muted-foreground">
                           Stock: {product.currentStock ?? 0}
@@ -455,9 +417,7 @@ function StockAuditPage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">
-                      Select category...
-                    </SelectItem>
+                    <SelectItem value="__none__">Select category...</SelectItem>
                     {categories.map((c: Category) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
@@ -497,19 +457,14 @@ function StockAuditPage() {
 
               {fields.map((field, index) => {
                 const line = watchedLines[index]
-                const variance =
-                  (line?.countedQuantity ?? 0) - (line?.expectedQuantity ?? 0)
+                const variance = (line?.countedQuantity ?? 0) - (line?.expectedQuantity ?? 0)
 
                 return (
                   <div key={field.id}>
                     {/* Desktop row */}
                     <div className="hidden grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] items-center gap-2 rounded-md border p-2 lg:grid">
-                      <span className="truncate text-sm font-medium">
-                        {line?.productName}
-                      </span>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {line?.sku}
-                      </span>
+                      <span className="truncate text-sm font-medium">{line?.productName}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{line?.sku}</span>
                       <span className="text-right font-mono text-sm tabular-nums">
                         {line?.expectedQuantity ?? 0}
                       </span>
@@ -547,12 +502,8 @@ function StockAuditPage() {
                     <div className="space-y-2 rounded-lg border bg-muted/20 p-3 lg:hidden">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
-                            {line?.productName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {line?.sku}
-                          </p>
+                          <p className="truncate text-sm font-medium">{line?.productName}</p>
+                          <p className="text-xs text-muted-foreground">{line?.sku}</p>
                         </div>
                         <Button
                           type="button"
@@ -565,17 +516,11 @@ function StockAuditPage() {
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div>
-                          <p className="text-xs text-muted-foreground">
-                            Expected
-                          </p>
-                          <p className="font-mono tabular-nums">
-                            {line?.expectedQuantity ?? 0}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Expected</p>
+                          <p className="font-mono tabular-nums">{line?.expectedQuantity ?? 0}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">
-                            Counted
-                          </p>
+                          <p className="text-xs text-muted-foreground">Counted</p>
                           <Input
                             type="number"
                             min={0}
@@ -586,9 +531,7 @@ function StockAuditPage() {
                           />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">
-                            Variance
-                          </p>
+                          <p className="text-xs text-muted-foreground">Variance</p>
                           <p
                             className={`font-mono font-medium tabular-nums ${
                               variance > 0
@@ -616,12 +559,8 @@ function StockAuditPage() {
               <CardContent>
                 <div className="grid grid-cols-4 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold tabular-nums">
-                      {auditSummary.total}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Items Audited
-                    </p>
+                    <p className="text-2xl font-bold tabular-nums">{auditSummary.total}</p>
+                    <p className="text-xs text-muted-foreground">Items Audited</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -649,9 +588,7 @@ function StockAuditPage() {
           {/* Submit */}
           {watchedLines.length > 0 && (
             <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending && (
-                <Loader2 className="mr-1 size-4 animate-spin" />
-              )}
+              {createMutation.isPending && <Loader2 className="mr-1 size-4 animate-spin" />}
               Submit Audit
             </Button>
           )}
@@ -678,11 +615,7 @@ function StockAuditPage() {
           loading={isLoadingHistory}
           emptyMessage="No audits recorded yet"
           mobileCard={mobileCard}
-          onRowClick={(item) =>
-            setExpandedAuditId(
-              expandedAuditId === item.id ? null : item.id,
-            )
-          }
+          onRowClick={(item) => setExpandedAuditId(expandedAuditId === item.id ? null : item.id)}
         />
 
         {/* Expanded variance details */}
@@ -695,8 +628,7 @@ function StockAuditPage() {
                 <Card key={`detail-${audit.id}`} size="sm">
                   <CardHeader>
                     <CardTitle>
-                      Variance Details -{' '}
-                      {format(new Date(audit.createdAt), 'dd MMM yyyy')}
+                      Variance Details - {format(new Date(audit.createdAt), 'dd MMM yyyy')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -709,10 +641,7 @@ function StockAuditPage() {
                         <span className="text-right">Variance</span>
                       </div>
                       {audit.lines.map((line) => (
-                        <div
-                          key={line.id}
-                          className="grid grid-cols-5 gap-2 px-4 py-2 text-sm"
-                        >
+                        <div key={line.id} className="grid grid-cols-5 gap-2 px-4 py-2 text-sm">
                           <span className="col-span-2 truncate font-medium">
                             {line.product?.name ?? line.productId}
                           </span>
@@ -776,9 +705,7 @@ function StockAuditPage() {
                 variant="outline"
                 size="sm"
                 disabled={historyOffset === 0}
-                onClick={() =>
-                  setHistoryOffset(Math.max(0, historyOffset - PAGE_SIZE))
-                }
+                onClick={() => setHistoryOffset(Math.max(0, historyOffset - PAGE_SIZE))}
               >
                 <ChevronLeft className="mr-1 size-3.5" />
                 Previous

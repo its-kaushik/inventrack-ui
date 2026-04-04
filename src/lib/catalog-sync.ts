@@ -35,10 +35,11 @@ export async function fullCatalogSync() {
 
     while (hasMore) {
       const response = await listProducts({ limit, offset, is_active: true })
-      const items = response.data?.items ?? ((response.data as any) ?? [])
+      const items = Array.isArray(response.data) ? response.data : []
 
       if (items.length > 0) {
         await db.products.bulkPut(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           items.map((p: any) => ({
             id: p.id,
             name: p.name,
@@ -88,10 +89,11 @@ export async function incrementalCatalogSync() {
         offset,
         updated_after: updatedAfter,
       })
-      const items = response.data?.items ?? ((response.data as any) ?? [])
+      const items = Array.isArray(response.data) ? response.data : []
 
       if (items.length > 0) {
         await db.products.bulkPut(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           items.map((p: any) => ({
             id: p.id,
             name: p.name,
