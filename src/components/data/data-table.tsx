@@ -56,7 +56,10 @@ export function DataTable<T>({
     return <TableSkeleton rows={5} columns={columns.length} />
   }
 
-  if (data.length === 0) {
+  // Filter out any null/undefined items defensively
+  const safeData = data.filter(Boolean)
+
+  if (safeData.length === 0) {
     return <EmptyState title={emptyMessage} />
   }
 
@@ -64,7 +67,7 @@ export function DataTable<T>({
   if (!isDesktop && mobileCard) {
     return (
       <div className="flex flex-col gap-2">
-        {data.map((item, index) => (
+        {safeData.map((item, index) => (
           <div
             key={index}
             onClick={() => onRowClick?.(item)}
@@ -88,10 +91,7 @@ export function DataTable<T>({
               .map((col) => (
                 <TableHead
                   key={col.key}
-                  className={cn(
-                    col.sortable && 'cursor-pointer select-none',
-                    col.className
-                  )}
+                  className={cn(col.sortable && 'cursor-pointer select-none', col.className)}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
                 >
                   <span className="flex items-center gap-1">
@@ -115,7 +115,7 @@ export function DataTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((item, index) => (
+          {safeData.map((item, index) => (
             <TableRow
               key={index}
               onClick={() => onRowClick?.(item)}

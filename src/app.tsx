@@ -45,24 +45,28 @@ function InnerApp() {
     setupReconnectSync()
   }, [])
 
-  // Notification polling
+  // Notification polling — only if backend supports it
   useEffect(() => {
     if (!auth.isAuthenticated) return
 
+    let stopped = false
     const poll = async () => {
       try {
         const { getUnreadCount } = await import('@/api/notifications.api')
         const { useNotificationStore } = await import('@/stores/notification.store')
         const res = await getUnreadCount()
-        useNotificationStore.getState().setUnreadCount(res.data.count)
+        if (!stopped) useNotificationStore.getState().setUnreadCount(res.data?.count ?? 0)
       } catch {
-        /* ignore */
+        // Endpoint may not exist yet — silently ignore
       }
     }
 
-    poll() // immediate
-    const interval = setInterval(poll, 30000) // every 30s
-    return () => clearInterval(interval)
+    poll()
+    const interval = setInterval(poll, 30000)
+    return () => {
+      stopped = true
+      clearInterval(interval)
+    }
   }, [auth.isAuthenticated])
 
   if (isRestoring) {

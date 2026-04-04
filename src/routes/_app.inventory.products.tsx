@@ -89,7 +89,13 @@ function ProductListPage() {
       lastPage.hasMore ? (lastPageParam as number) + PAGE_SIZE : undefined,
   })
 
-  const allProducts = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
+  const allProducts = useMemo(
+    () =>
+      data?.pages
+        .flatMap((page) => page?.items ?? (Array.isArray(page) ? page : []))
+        .filter(Boolean) ?? [],
+    [data],
+  )
 
   // Client-side stock filter
   const filteredProducts = useMemo(() => {
