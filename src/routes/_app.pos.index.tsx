@@ -1,6 +1,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Search, ShoppingCart, History, X, ScanBarcode, Camera, Pause, ListRestart } from 'lucide-react'
+import {
+  Search,
+  ShoppingCart,
+  History,
+  X,
+  ScanBarcode,
+  Camera,
+  Pause,
+  ListRestart,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { useCartStore, selectItemCount } from '@/stores/cart.store'
 import { useUiStore } from '@/stores/ui.store'
@@ -38,8 +47,7 @@ function PosBillingPage() {
 
   const items = useCartStore((s) => s.items)
   const addItem = useCartStore((s) => s.addItem)
-  const holdCurrentCart = useCartStore((s) => s.holdCurrentCart)
-  const heldBillsCount = useCartStore((s) => s.heldBills.length)
+  const heldBillsCount = 0 // fetched from server in held bills page
   const itemCount = useCartStore(selectItemCount)
 
   const { results, isLoading } = useProductSearch(searchQuery)
@@ -51,13 +59,10 @@ function PosBillingPage() {
   }, [])
 
   // Barcode scanner hook (Bluetooth/USB) — active in scan mode
-  const handleBarcodeScan = useCallback(
-    (barcode: string) => {
-      setSearchQuery(barcode)
-      playScanFeedback()
-    },
-    [],
-  )
+  const handleBarcodeScan = useCallback((barcode: string) => {
+    setSearchQuery(barcode)
+    playScanFeedback()
+  }, [])
 
   useScanner({
     onScan: handleBarcodeScan,
@@ -65,13 +70,10 @@ function PosBillingPage() {
   })
 
   // Camera scan handler
-  const handleCameraScan = useCallback(
-    (barcode: string) => {
-      setSearchQuery(barcode)
-      playScanFeedback()
-    },
-    [],
-  )
+  const handleCameraScan = useCallback((barcode: string) => {
+    setSearchQuery(barcode)
+    playScanFeedback()
+  }, [])
 
   const focusSearch = useCallback(() => {
     searchInputRef.current?.focus()
@@ -85,12 +87,23 @@ function PosBillingPage() {
     setPaymentOpen(false)
   }, [])
 
-  const handleHoldBill = useCallback(() => {
+  const handleHoldBill = useCallback(async () => {
     if (itemCount === 0) return
     const note = window.prompt('Add a note for this held bill (optional):') ?? ''
-    holdCurrentCart(note)
-    toast.success('Bill held')
-  }, [itemCount, holdCurrentCart])
+    try {
+      const { holdBill } = await import('@/api/bills.api')
+      await holdBill({
+        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        customerId: useCartStore.getState().customerId ?? undefined,
+        additionalDiscountAmount: useCartStore.getState().additionalDiscountAmount || undefined,
+        notes: note || undefined,
+      })
+      useCartStore.getState().clear()
+      toast.success('Bill held')
+    } catch {
+      toast.error('Failed to hold bill')
+    }
+  }, [itemCount, items])
 
   // Keyboard shortcuts
   useKeyboardShortcut('F1', focusSearch)
@@ -164,9 +177,7 @@ function PosBillingPage() {
               <div className="flex h-full items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <Search className="mx-auto mb-2 size-10 opacity-30" />
-                  <p className="text-sm">
-                    Scan barcode or type to search products
-                  </p>
+                  <p className="text-sm">Scan barcode or type to search products</p>
                   <p className="mt-1 text-xs text-muted-foreground/70">
                     F1 to focus search, F2 to pay
                   </p>
@@ -199,9 +210,7 @@ function PosBillingPage() {
                 className="py-16"
               />
             ) : (
-              items.map((item) => (
-                <CartItemRow key={item.productId} item={item} />
-              ))
+              items.map((item) => <CartItemRow key={item.productId} item={item} />)
             )}
           </div>
 
@@ -252,11 +261,7 @@ function PosBillingPage() {
       <div className="flex-1 overflow-y-auto">
         {searchQuery.length >= 2 ? (
           <div className="p-3">
-            <SearchResults
-              results={results}
-              isLoading={isLoading}
-              onSelect={handleProductSelect}
-            />
+            <SearchResults results={results} isLoading={isLoading} onSelect={handleProductSelect} />
           </div>
         ) : (
           <div className="space-y-2 p-3">
@@ -268,9 +273,7 @@ function PosBillingPage() {
                 className="py-12"
               />
             ) : (
-              items.map((item) => (
-                <CartItemRow key={item.productId} item={item} compact />
-              ))
+              items.map((item) => <CartItemRow key={item.productId} item={item} compact />)
             )}
           </div>
         )}
@@ -419,37 +422,38 @@ interface SearchBarProps {
 
 import { forwardRef } from 'react'
 
-const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
-  function SearchBar({ value, onChange, onKeyDown }, ref) {
-    return (
-      <div>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            ref={ref}
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Scan barcode or search product..."
-            className="pl-8 pr-8"
-            autoFocus
-          />
-          {value && (
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              className="absolute right-1 top-1/2 -translate-y-1/2"
-              onClick={() => onChange('')}
-            >
-              <X className="size-3.5" />
-            </Button>
-          )}
-        </div>
+const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(function SearchBar(
+  { value, onChange, onKeyDown },
+  ref,
+) {
+  return (
+    <div>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={ref}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="Scan barcode or search product..."
+          className="pl-8 pr-8"
+          autoFocus
+        />
+        {value && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="absolute right-1 top-1/2 -translate-y-1/2"
+            onClick={() => onChange('')}
+          >
+            <X className="size-3.5" />
+          </Button>
+        )}
       </div>
-    )
-  },
-)
+    </div>
+  )
+})
 
 interface SearchResultsProps {
   results: Product[]
@@ -462,21 +466,14 @@ function SearchResults({ results, isLoading, onSelect }: SearchResultsProps) {
     return (
       <div className="space-y-2">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-14 animate-pulse rounded-lg bg-muted"
-          />
+          <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />
         ))}
       </div>
     )
   }
 
   if (results.length === 0) {
-    return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
-        No products found
-      </p>
-    )
+    return <p className="py-8 text-center text-sm text-muted-foreground">No products found</p>
   }
 
   return (
@@ -491,11 +488,7 @@ function SearchResults({ results, isLoading, onSelect }: SearchResultsProps) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">
               {product.name}
-              {product.size && (
-                <span className="ml-1 text-muted-foreground">
-                  ({product.size})
-                </span>
-              )}
+              {product.size && <span className="ml-1 text-muted-foreground">({product.size})</span>}
             </p>
             <p className="text-xs text-muted-foreground">
               {product.sku}

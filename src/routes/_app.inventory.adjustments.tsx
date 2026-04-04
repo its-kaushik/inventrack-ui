@@ -5,13 +5,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import {
-  Loader2,
-  Search,
-  SlidersHorizontal,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
+import { Loader2, Search, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { queryKeys } from '@/api/query-keys'
 import {
@@ -53,9 +47,12 @@ const adjustmentSchema = z.object({
     .number()
     .int('Must be a whole number')
     .refine((val) => val !== 0, 'Quantity cannot be zero'),
-  reason: z.enum(['damage', 'theft', 'count_correction', 'write_off'] as const, {
-    error: 'Reason is required',
-  }),
+  reason: z.enum(
+    ['damage', 'theft', 'count_correction', 'write_off', 'expired', 'other'] as const,
+    {
+      error: 'Reason is required',
+    },
+  ),
   notes: z.string().optional(),
 })
 
@@ -66,6 +63,8 @@ const ADJUSTMENT_REASONS = [
   { value: 'theft', label: 'Theft' },
   { value: 'count_correction', label: 'Count Correction' },
   { value: 'write_off', label: 'Write Off' },
+  { value: 'expired', label: 'Expired' },
+  { value: 'other', label: 'Other' },
 ]
 
 const PAGE_SIZE = 20
@@ -214,11 +213,8 @@ function StockAdjustmentPage() {
   )
 
   const { data: historyData, isLoading: isLoadingHistory } = useQuery({
-    queryKey: queryKeys.stockAdjustments.list(
-      historyFilters as unknown as Record<string, unknown>,
-    ),
-    queryFn: () =>
-      listStockAdjustments(historyFilters).then((res) => res.data),
+    queryKey: queryKeys.stockAdjustments.list(historyFilters as unknown as Record<string, unknown>),
+    queryFn: () => listStockAdjustments(historyFilters).then((res) => res.data),
   })
 
   const historyItems = historyData?.items ?? []
@@ -244,11 +240,7 @@ function StockAdjustmentPage() {
       reset()
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to record stock adjustment.',
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to record stock adjustment.')
     },
   })
 
@@ -261,9 +253,7 @@ function StockAdjustmentPage() {
     return found?.label ?? reason
   }
 
-  function reasonVariant(
-    reason: string,
-  ): 'default' | 'warning' | 'error' | 'info' {
+  function reasonVariant(reason: string): 'default' | 'warning' | 'error' | 'info' {
     switch (reason) {
       case 'damage':
         return 'warning'
@@ -283,18 +273,14 @@ function StockAdjustmentPage() {
       key: 'date',
       header: 'Date',
       render: (item) => (
-        <span className="text-sm">
-          {format(new Date(item.createdAt), 'dd MMM yyyy HH:mm')}
-        </span>
+        <span className="text-sm">{format(new Date(item.createdAt), 'dd MMM yyyy HH:mm')}</span>
       ),
     },
     {
       key: 'product',
       header: 'Product',
       render: (item) => (
-        <span className="text-sm font-medium">
-          {item.product?.name ?? item.productId}
-        </span>
+        <span className="text-sm font-medium">{item.product?.name ?? item.productId}</span>
       ),
     },
     {
@@ -317,28 +303,20 @@ function StockAdjustmentPage() {
       key: 'reason',
       header: 'Reason',
       render: (item) => (
-        <StatusBadge variant={reasonVariant(item.reason)}>
-          {reasonLabel(item.reason)}
-        </StatusBadge>
+        <StatusBadge variant={reasonVariant(item.reason)}>{reasonLabel(item.reason)}</StatusBadge>
       ),
     },
     {
       key: 'notes',
       header: 'Notes',
-      render: (item) => (
-        <span className="text-sm text-muted-foreground">
-          {item.notes ?? '-'}
-        </span>
-      ),
+      render: (item) => <span className="text-sm text-muted-foreground">{item.notes ?? '-'}</span>,
       hideOnMobile: true,
     },
     {
       key: 'user',
       header: 'User',
       render: (item) => (
-        <span className="text-sm text-muted-foreground">
-          {item.user?.name ?? '-'}
-        </span>
+        <span className="text-sm text-muted-foreground">{item.user?.name ?? '-'}</span>
       ),
       hideOnMobile: true,
     },
@@ -349,9 +327,7 @@ function StockAdjustmentPage() {
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">
-              {item.product?.name ?? item.productId}
-            </p>
+            <p className="truncate text-sm font-medium">{item.product?.name ?? item.productId}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {format(new Date(item.createdAt), 'dd MMM yyyy HH:mm')}
             </p>
@@ -387,14 +363,9 @@ function StockAdjustmentPage() {
       </div>
 
       {/* Adjustment Form */}
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="max-w-2xl space-y-6"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6">
         <fieldset className="space-y-4 rounded-lg border p-4">
-          <legend className="px-2 text-sm font-semibold">
-            New Adjustment
-          </legend>
+          <legend className="px-2 text-sm font-semibold">New Adjustment</legend>
 
           {/* Product Search */}
           <div className="space-y-1.5">
@@ -414,9 +385,7 @@ function StockAdjustmentPage() {
               )}
             />
             {errors.productId && (
-              <p className="text-xs text-destructive">
-                {errors.productId.message}
-              </p>
+              <p className="text-xs text-destructive">{errors.productId.message}</p>
             )}
           </div>
 
@@ -435,9 +404,7 @@ function StockAdjustmentPage() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Current Stock</p>
-                    <p className="font-mono font-bold tabular-nums">
-                      {stockData.currentStock}
-                    </p>
+                    <p className="font-mono font-bold tabular-nums">{stockData.currentStock}</p>
                   </div>
                 </div>
               </CardContent>
@@ -457,9 +424,7 @@ function StockAdjustmentPage() {
               aria-invalid={!!errors.quantityChange}
             />
             {errors.quantityChange && (
-              <p className="text-xs text-destructive">
-                {errors.quantityChange.message}
-              </p>
+              <p className="text-xs text-destructive">{errors.quantityChange.message}</p>
             )}
           </div>
 
@@ -471,10 +436,7 @@ function StockAdjustmentPage() {
               name="reason"
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger
-                    className="w-full"
-                    aria-invalid={!!errors.reason}
-                  >
+                  <SelectTrigger className="w-full" aria-invalid={!!errors.reason}>
                     <SelectValue placeholder="Select reason" />
                   </SelectTrigger>
                   <SelectContent>
@@ -487,11 +449,7 @@ function StockAdjustmentPage() {
                 </Select>
               )}
             />
-            {errors.reason && (
-              <p className="text-xs text-destructive">
-                {errors.reason.message}
-              </p>
-            )}
+            {errors.reason && <p className="text-xs text-destructive">{errors.reason.message}</p>}
           </div>
 
           {/* Notes */}
@@ -504,9 +462,7 @@ function StockAdjustmentPage() {
           </div>
 
           <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending && (
-              <Loader2 className="mr-1 size-4 animate-spin" />
-            )}
+            {mutation.isPending && <Loader2 className="mr-1 size-4 animate-spin" />}
             Submit Adjustment
           </Button>
         </fieldset>
@@ -537,8 +493,7 @@ function StockAdjustmentPage() {
         {historyItems.length > 0 && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {offset + 1}&ndash;{offset + historyItems.length}{' '}
-              adjustments
+              Showing {offset + 1}&ndash;{offset + historyItems.length} adjustments
             </p>
             <div className="flex items-center gap-2">
               <Button

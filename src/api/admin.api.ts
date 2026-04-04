@@ -67,8 +67,5 @@ export function changePlan(id: string, plan: 'free' | 'basic' | 'pro') {
 /**
  * @deprecated Use updateTenant() instead. The API no longer has a dedicated extend-trial endpoint.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function extendTrial(id: string, days: number) {
-  // No longer a separate endpoint; use PATCH /admin/tenants/:id
-  return updateTenant(id, {})
-}
+/** @deprecated Use updateTenant() instead */
+export const extendTrial = updateTenant

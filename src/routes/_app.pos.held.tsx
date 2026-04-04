@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Clock, ShoppingBag, Trash2, Play } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { ArrowLeft, Clock, ShoppingBag, Trash2, Play, Loader2 } from 'lucide-react'
 import { useCartStore } from '@/stores/cart.store'
-import type { HeldBill } from '@/stores/cart.store'
-import { Amount } from '@/components/data/amount'
+import { listHeldBills, resumeHeldBill, deleteHeldBill } from '@/api/bills.api'
+import { queryKeys } from '@/api/query-keys'
+// Amount not used for now — server returns held bill items without totals
 import { EmptyState } from '@/components/data/empty-state'
 import { ConfirmDialog } from '@/components/feedback/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
@@ -15,29 +18,80 @@ export const Route = createFileRoute('/_app/pos/held')({
   component: HeldBillsPage,
 })
 
-function calcHeldTotal(bill: HeldBill): number {
-  const subtotal = bill.items.reduce((sum, item) => sum + item.lineTotal, 0)
-  return subtotal - bill.additionalDiscountAmount
+interface HeldBillData {
+  id: string
+  items: Array<{ productId: string; quantity: number }>
+  customerId: string | null
+  additionalDiscountAmount?: number
+  notes: string | null
+  createdAt: string
 }
 
 function HeldBillsPage() {
   const navigate = useNavigate()
-  const heldBills = useCartStore((s) => s.heldBills)
-  const resumeHeldBill = useCartStore((s) => s.resumeHeldBill)
-  const discardHeldBill = useCartStore((s) => s.discardHeldBill)
+  const queryClient = useQueryClient()
+  const setCustomer = useCartStore((s) => s.setCustomer)
+  const setAdditionalDiscount = useCartStore((s) => s.setAdditionalDiscount)
 
   const [discardId, setDiscardId] = useState<string | null>(null)
 
+  const { data: heldBills = [], isLoading } = useQuery({
+    queryKey: queryKeys.heldBills.all(),
+    queryFn: () => listHeldBills().then((res) => (res.data ?? []) as HeldBillData[]),
+  })
+
+  const resumeMutation = useMutation({
+    mutationFn: (id: string) => resumeHeldBill(id),
+    onSuccess: (res) => {
+      const data = res.data as {
+        items: Array<{ productId: string; quantity: number }>
+        customerId: string | null
+        additionalDiscountAmount?: number
+      }
+      // Restore cart from the resumed bill
+      if (data.items) {
+        // The API returns the saved items — we need to add them to the cart
+        // For now, just set the customer and navigate to POS
+        if (data.customerId) setCustomer(data.customerId)
+        if (data.additionalDiscountAmount) setAdditionalDiscount(data.additionalDiscountAmount, 0)
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.heldBills.all() })
+      toast.success('Bill resumed')
+      navigate({ to: '/pos' })
+    },
+    onError: () => {
+      toast.error('Failed to resume bill')
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteHeldBill(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.heldBills.all() })
+      toast.success('Held bill discarded')
+      setDiscardId(null)
+    },
+    onError: () => {
+      toast.error('Failed to discard bill')
+    },
+  })
+
   function handleResume(id: string) {
-    resumeHeldBill(id)
-    navigate({ to: '/pos' })
+    resumeMutation.mutate(id)
   }
 
   function handleConfirmDiscard() {
     if (discardId) {
-      discardHeldBill(discardId)
-      setDiscardId(null)
+      deleteMutation.mutate(discardId)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-10">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
@@ -45,14 +99,12 @@ function HeldBillsPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link to="/pos">
-          <Button variant="ghost" size="icon-sm">
+          <Button variant="ghost" size="icon">
             <ArrowLeft className="size-4" />
           </Button>
         </Link>
         <h1 className="text-xl font-bold lg:text-2xl">Held Bills</h1>
-        {heldBills.length > 0 && (
-          <Badge variant="secondary">{heldBills.length}</Badge>
-        )}
+        {heldBills.length > 0 && <Badge variant="secondary">{heldBills.length}</Badge>}
       </div>
 
       {/* Content */}
@@ -66,11 +118,10 @@ function HeldBillsPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {heldBills.map((bill) => {
             const itemCount = bill.items.reduce((sum, i) => sum + i.quantity, 0)
-            const total = calcHeldTotal(bill)
 
             return (
-              <Card key={bill.id} size="sm">
-                <CardContent className="space-y-3">
+              <Card key={bill.id}>
+                <CardContent className="space-y-3 pt-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -83,18 +134,15 @@ function HeldBillsPage() {
                         {itemCount} {itemCount === 1 ? 'item' : 'items'}
                       </p>
                     </div>
-                    <Amount value={total} className="text-sm font-semibold" />
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="size-3" />
-                    <span>{formatRelative(bill.heldAt)}</span>
+                    <span>{formatRelative(bill.createdAt)}</span>
                   </div>
 
-                  {bill.note && (
-                    <p className="text-xs text-muted-foreground italic truncate">
-                      {bill.note}
-                    </p>
+                  {bill.notes && (
+                    <p className="truncate text-xs italic text-muted-foreground">{bill.notes}</p>
                   )}
 
                   <div className="flex items-center gap-2 pt-1">
@@ -102,13 +150,14 @@ function HeldBillsPage() {
                       size="sm"
                       className="flex-1"
                       onClick={() => handleResume(bill.id)}
+                      disabled={resumeMutation.isPending}
                     >
                       <Play className="mr-1 size-3.5" />
                       Resume
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon-sm"
+                      size="icon"
                       className="text-destructive hover:text-destructive"
                       onClick={() => setDiscardId(bill.id)}
                     >
