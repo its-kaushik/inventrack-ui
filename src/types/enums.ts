@@ -1,0 +1,8 @@
+export type UserRole = 'owner' | 'manager' | 'salesperson'
+export type BillStatus = 'completed' | 'voided'
+export type PaymentMode = 'cash' | 'upi' | 'card' | 'credit'
+export type GstScheme = 'regular' | 'composition'
+export type StockStatus = 'healthy' | 'low' | 'out'
+export type SupplierPaymentMode = 'cash' | 'upi' | 'bank_transfer' | 'cheque' | 'card'
+export type CashRegisterStatus = 'open' | 'closed'
+export type PurchaseStatus = 'completed'
