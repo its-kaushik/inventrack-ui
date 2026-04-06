@@ -33,6 +33,10 @@ const SupplierListPage = lazy(() => import('@/features/purchases/SupplierListPag
 const SupplierDetailPage = lazy(() => import('@/features/purchases/SupplierDetailPage'));
 const SupplierFormPage = lazy(() => import('@/features/purchases/SupplierFormPage'));
 
+// ── Purchase pages (F8 — lazy loaded) ──
+const GoodsReceiptPage = lazy(() => import('@/features/purchases/GoodsReceiptPage'));
+const PurchaseReturnPage = lazy(() => import('@/features/purchases/PurchaseReturnPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
 const CustomerListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Customers" milestone="F9" /> })));
@@ -97,6 +101,8 @@ function AppRoutes() {
           {/* Purchases — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
             <Route path="/purchases" element={<LazyPage><PurchasesPage /></LazyPage>} />
+            <Route path="/purchases/receive" element={<LazyPage><GoodsReceiptPage /></LazyPage>} />
+            <Route path="/purchases/return" element={<LazyPage><PurchaseReturnPage /></LazyPage>} />
           </Route>
 
           {/* Reports — manager+ */}
