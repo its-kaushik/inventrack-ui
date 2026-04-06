@@ -28,9 +28,13 @@ const StockAdjustmentPage = lazy(() => import('@/features/products/StockAdjustme
 const StockMovementPage = lazy(() => import('@/features/products/StockMovementPage'));
 const StockCountPage = lazy(() => import('@/features/products/StockCountPage'));
 
+// ── Supplier pages (F7 — lazy loaded) ──
+const SupplierListPage = lazy(() => import('@/features/purchases/SupplierListPage'));
+const SupplierDetailPage = lazy(() => import('@/features/purchases/SupplierDetailPage'));
+const SupplierFormPage = lazy(() => import('@/features/purchases/SupplierFormPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
-const SupplierListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Suppliers" milestone="F7" /> })));
 const CustomerListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Customers" milestone="F9" /> })));
 const CreditPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Credit / Khata" milestone="F11" /> })));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
@@ -74,8 +78,13 @@ function AppRoutes() {
           </Route>
           <Route path="/products/:productId/variants/:variantId/movements" element={<LazyPage><StockMovementPage /></LazyPage>} />
 
-          {/* Suppliers — manager+ */}
+          {/* Suppliers — all roles can view, manager+ can create/edit */}
           <Route path="/suppliers" element={<LazyPage><SupplierListPage /></LazyPage>} />
+          <Route path="/suppliers/:id" element={<LazyPage><SupplierDetailPage /></LazyPage>} />
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/suppliers/new" element={<LazyPage><SupplierFormPage /></LazyPage>} />
+            <Route path="/suppliers/:id/edit" element={<LazyPage><SupplierFormPage /></LazyPage>} />
+          </Route>
 
           {/* Customers — all roles */}
           <Route path="/customers" element={<LazyPage><CustomerListPage /></LazyPage>} />
