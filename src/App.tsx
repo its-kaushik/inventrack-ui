@@ -37,9 +37,13 @@ const SupplierFormPage = lazy(() => import('@/features/purchases/SupplierFormPag
 const GoodsReceiptPage = lazy(() => import('@/features/purchases/GoodsReceiptPage'));
 const PurchaseReturnPage = lazy(() => import('@/features/purchases/PurchaseReturnPage'));
 
+// ── Customer pages (F9 — lazy loaded) ──
+const CustomerListPage = lazy(() => import('@/features/customers/CustomerListPage'));
+const CustomerDetailPage = lazy(() => import('@/features/customers/CustomerDetailPage'));
+const CustomerFormPage = lazy(() => import('@/features/customers/CustomerFormPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
-const CustomerListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Customers" milestone="F9" /> })));
 const CreditPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Credit / Khata" milestone="F11" /> })));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
 const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
@@ -92,6 +96,9 @@ function AppRoutes() {
 
           {/* Customers — all roles */}
           <Route path="/customers" element={<LazyPage><CustomerListPage /></LazyPage>} />
+          <Route path="/customers/:id" element={<LazyPage><CustomerDetailPage /></LazyPage>} />
+          <Route path="/customers/new" element={<LazyPage><CustomerFormPage /></LazyPage>} />
+          <Route path="/customers/:id/edit" element={<LazyPage><CustomerFormPage /></LazyPage>} />
 
           {/* Credit/Khata — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
