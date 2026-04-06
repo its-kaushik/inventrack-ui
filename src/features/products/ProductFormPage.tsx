@@ -43,6 +43,7 @@ import {
 } from '@/hooks/use-products';
 import { VariantMatrixEditor, type VariantRow } from '@/features/products/components';
 import type { CreateProductRequest } from '@/api/products.api';
+import { useGstConfig } from '@/hooks/use-settings';
 import { formatINR } from '@/lib/currency';
 import { cn } from '@/lib/cn';
 
@@ -338,6 +339,9 @@ export default function ProductFormPage() {
   const { data: existingProduct, isLoading: isLoadingProduct } = useProduct(id ?? '');
   const { data: categories = [] } = useCategories();
   const { data: brands = [] } = useBrands();
+
+  const { data: gstConfig } = useGstConfig();
+  const isRegularGst = gstConfig?.gstScheme === 'regular';
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct(id ?? '');
@@ -842,9 +846,9 @@ export default function ProductFormPage() {
           />
         </div>
 
-        {/* GST Rate */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-gst">GST Rate</Label>
+        {/* GST Rate — only shown under Regular GST scheme */}
+        {isRegularGst && <div className="flex flex-col gap-1.5">
+          <Label htmlFor="product-gst">GST Rate <span className="text-error-500">*</span></Label>
           <Controller
             name="gstRate"
             control={control}
@@ -864,7 +868,7 @@ export default function ProductFormPage() {
               </Select>
             )}
           />
-        </div>
+        </div>}
 
         {/* Image Picker */}
         <div className="flex flex-col gap-1.5">

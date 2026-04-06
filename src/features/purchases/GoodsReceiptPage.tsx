@@ -42,6 +42,7 @@ import {
 } from '@/components/shared';
 
 import { useSuppliers } from '@/hooks/use-suppliers';
+import { useGstConfig } from '@/hooks/use-settings';
 import { useCreateGoodsReceipt } from '@/hooks/use-purchases';
 import { productsApi, type ProductDetail } from '@/api/products.api';
 import type { GoodsReceiptDetail } from '@/api/purchases.api';
@@ -60,6 +61,7 @@ interface ReceiptFormItem {
   sku: string;
   quantityReceived: number;
   costPrice: number;
+  gstRate: number;
 }
 
 const PAYMENT_MODE_OPTIONS: { value: ReceiptPaymentMode; label: string }[] = [
@@ -305,6 +307,7 @@ export default function GoodsReceiptPage() {
           sku: variant.sku,
           quantityReceived: 1,
           costPrice: parseFloat(variant.costPrice) || 0,
+          gstRate: 0,
         },
       ]);
     },
