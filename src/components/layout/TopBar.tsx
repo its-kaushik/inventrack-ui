@@ -11,6 +11,7 @@ import { useIsMobile } from '@/hooks/use-media-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLogout } from '@/hooks/use-auth';
+import { useUnreadNotificationCount } from '@/hooks/use-notifications';
 import { Bell, Menu, ArrowLeft, Search, Settings, LogOut, User } from 'lucide-react';
 
 interface TopBarProps {
@@ -38,6 +39,7 @@ export function TopBar({
     else navigate(-1);
   };
 
+  const { data: unreadCount } = useUnreadNotificationCount();
   const userInitial = user?.name?.charAt(0)?.toUpperCase() ?? '?';
   const canAccessSettings = user?.role === 'owner' || user?.role === 'super_admin';
 
@@ -68,9 +70,13 @@ export function TopBar({
           </h1>
 
           <div className="flex w-10 shrink-0 items-center justify-end">
-            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative" onClick={() => navigate('/notifications')}>
               <Bell className="size-5" />
-              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-error-500" />
+              {(unreadCount ?? 0) > 0 && (
+                <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-error-500 text-[10px] font-bold text-white">
+                  {unreadCount! > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Button>
           </div>
         </div>
@@ -87,9 +93,13 @@ export function TopBar({
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative" onClick={() => navigate('/notifications')}>
               <Bell className="size-5" />
-              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-error-500" />
+              {(unreadCount ?? 0) > 0 && (
+                <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-error-500 text-[10px] font-bold text-white">
+                  {unreadCount! > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Button>
 
             {/* User menu dropdown */}

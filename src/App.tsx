@@ -82,6 +82,9 @@ const POListPage = lazy(() => import('@/features/purchases/POListPage'));
 const POFormPage = lazy(() => import('@/features/purchases/POFormPage'));
 const PODetailPage = lazy(() => import('@/features/purchases/PODetailPage'));
 
+// ── Notification pages (F20 — lazy loaded) ──
+const NotificationCenterPage = lazy(() => import('@/features/notifications/NotificationCenterPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'));
 const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
@@ -167,6 +170,9 @@ function AppRoutes() {
             <Route path="/expenses/new" element={<LazyPage><ExpenseFormPage /></LazyPage>} />
             <Route path="/cash-register" element={<LazyPage><CashRegisterPage /></LazyPage>} />
             <Route path="/sync-review" element={<LazyPage><SyncReviewPage /></LazyPage>} />
+
+            {/* Notifications — all roles */}
+            <Route path="/notifications" element={<LazyPage><NotificationCenterPage /></LazyPage>} />
           </Route>
 
           {/* Settings — role-gated sub-pages */}
