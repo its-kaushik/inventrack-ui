@@ -1,3 +1,6 @@
-export const env = {
-  apiUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
-} as const
+const env = {
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  APP_NAME: 'InvenTrack',
+} as const;
+
+export { env };

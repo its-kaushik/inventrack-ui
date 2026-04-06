@@ -1,204 +1,190 @@
-import { create } from 'zustand'
-import type { Product, ProductSnapshot } from '@/types/models'
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { calculateDiscount, type DiscountResult, type DiscountLineItem } from '@/lib/discount-engine';
+import type { PaymentMethod } from '@/types/enums';
+
+// ── Types ──
 
 export interface CartItem {
-  productId: string
-  product: ProductSnapshot
-  quantity: number
-  lineTotal: number
+  variantId: string;
+  productId: string;
+  productName: string;
+  variantDescription: string;
+  sku: string;
+  barcode: string;
+  mrp: number;
+  costPrice: number;
+  quantity: number;
+  productDiscountPct: number;
+  gstRate: number;
+  hsnCode: string | null;
+  /** Optimistic locking — checked when submitting sale */
+  version: number;
 }
 
-export interface HeldBill {
-  id: string
-  items: CartItem[]
-  customerId: string | null
-  additionalDiscountAmount: number
-  additionalDiscountPct: number
-  note: string
-  heldAt: string
+export interface CartPayment {
+  method: PaymentMethod;
+  amount: number;
+}
+
+export interface CartCustomer {
+  id: string;
+  name: string;
+  phone: string;
+  outstandingBalance: number;
 }
 
 interface CartState {
-  items: CartItem[]
-  customerId: string | null
-  additionalDiscountAmount: number
-  additionalDiscountPct: number
-  heldBills: HeldBill[]
+  // Customer
+  customer: CartCustomer | null;
+  newOfflineCustomer: { name: string; phone: string } | null;
 
-  addItem: (product: Product) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, qty: number) => void
-  setCustomer: (id: string | null) => void
-  setAdditionalDiscount: (amount: number, pct: number) => void
-  clear: () => void
-  holdCurrentCart: (note?: string) => void
-  resumeHeldBill: (id: string) => void
-  discardHeldBill: (id: string) => void
+  // Items
+  items: CartItem[];
+
+  // Discounts
+  billDiscountPct: number;
+  bargainAdjustment: number;
+  finalPriceOverride: number | null;
+  approvalToken: string | null;
+
+  // Calculated (recomputed on every change)
+  discountResult: DiscountResult | null;
+
+  // Payments
+  payments: CartPayment[];
+
+  // Actions
+  setCustomer: (customer: CartCustomer) => void;
+  setNewOfflineCustomer: (data: { name: string; phone: string }) => void;
+  clearCustomer: () => void;
+
+  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  updateQuantity: (variantId: string, quantity: number) => void;
+  removeItem: (variantId: string) => void;
+
+  setBillDiscountPct: (pct: number) => void;
+  setBargainAdjustment: (amount: number) => void;
+  setFinalPriceOverride: (price: number | null) => void;
+  setApprovalToken: (token: string | null) => void;
+
+  setPayments: (payments: CartPayment[]) => void;
+
+  recalculate: () => void;
+  clearCart: () => void;
 }
 
-function calcLineTotal(sellingPrice: number, catalogDiscountPct: number, quantity: number): number {
-  return sellingPrice * (1 - catalogDiscountPct / 100) * quantity
-}
+function buildDiscountInput(state: { items: CartItem[]; billDiscountPct: number; bargainAdjustment: number; finalPriceOverride: number | null }) {
+  const discountItems: DiscountLineItem[] = state.items.map((item) => ({
+    mrp: item.mrp,
+    quantity: item.quantity,
+    productDiscountPct: item.productDiscountPct,
+  }));
 
-function snapshotFromProduct(product: Product): ProductSnapshot {
   return {
-    name: product.name,
-    sku: product.sku,
-    size: product.size,
-    sellingPrice: product.sellingPrice,
-    catalogDiscountPct: product.catalogDiscountPct,
-    gstRate: product.gstRate,
-  }
+    items: discountItems,
+    billDiscountPct: state.billDiscountPct,
+    bargainAdjustment: state.bargainAdjustment,
+    finalPriceOverride: state.finalPriceOverride ?? undefined,
+  };
 }
 
-const HELD_BILLS_KEY = 'inventrack-held-bills'
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
+      customer: null,
+      newOfflineCustomer: null,
+      items: [],
+      billDiscountPct: 0,
+      bargainAdjustment: 0,
+      finalPriceOverride: null,
+      approvalToken: null,
+      discountResult: null,
+      payments: [],
 
-export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
-  customerId: null,
-  additionalDiscountAmount: 0,
-  additionalDiscountPct: 0,
-  heldBills: JSON.parse(localStorage.getItem(HELD_BILLS_KEY) ?? '[]') as HeldBill[],
+      setCustomer: (customer) => set({ customer, newOfflineCustomer: null }),
+      setNewOfflineCustomer: (data) => set({ newOfflineCustomer: data, customer: null }),
+      clearCustomer: () => set({ customer: null, newOfflineCustomer: null }),
 
-  addItem: (product) =>
-    set((state) => {
-      const existing = state.items.find((i) => i.productId === product.id)
-      if (existing) {
-        return {
-          items: state.items.map((i) =>
-            i.productId === product.id
-              ? {
-                  ...i,
-                  quantity: i.quantity + 1,
-                  lineTotal: calcLineTotal(
-                    i.product.sellingPrice,
-                    i.product.catalogDiscountPct,
-                    i.quantity + 1,
-                  ),
-                }
-              : i,
-          ),
+      addItem: (item) => {
+        const { items } = get();
+        const existing = items.find((i) => i.variantId === item.variantId);
+        if (existing) {
+          set({
+            items: items.map((i) =>
+              i.variantId === item.variantId ? { ...i, quantity: i.quantity + 1 } : i,
+            ),
+          });
+        } else {
+          set({ items: [...items, { ...item, quantity: 1 }] });
         }
-      }
-      const snapshot = snapshotFromProduct(product)
-      return {
-        items: [
-          ...state.items,
-          {
-            productId: product.id,
-            product: snapshot,
-            quantity: 1,
-            lineTotal: calcLineTotal(snapshot.sellingPrice, snapshot.catalogDiscountPct, 1),
-          },
-        ],
-      }
+        get().recalculate();
+      },
+
+      updateQuantity: (variantId, quantity) => {
+        if (quantity <= 0) {
+          get().removeItem(variantId);
+          return;
+        }
+        set({
+          items: get().items.map((i) =>
+            i.variantId === variantId ? { ...i, quantity } : i,
+          ),
+        });
+        get().recalculate();
+      },
+
+      removeItem: (variantId) => {
+        set({ items: get().items.filter((i) => i.variantId !== variantId) });
+        get().recalculate();
+      },
+
+      setBillDiscountPct: (pct) => {
+        set({ billDiscountPct: pct, finalPriceOverride: null, approvalToken: null });
+        get().recalculate();
+      },
+
+      setBargainAdjustment: (amount) => {
+        set({ bargainAdjustment: amount, finalPriceOverride: null, approvalToken: null });
+        get().recalculate();
+      },
+
+      setFinalPriceOverride: (price) => {
+        set({ finalPriceOverride: price, bargainAdjustment: 0, approvalToken: null });
+        get().recalculate();
+      },
+
+      setApprovalToken: (token) => set({ approvalToken: token }),
+
+      setPayments: (payments) => set({ payments }),
+
+      recalculate: () => {
+        const state = get();
+        if (state.items.length === 0) {
+          set({ discountResult: null });
+          return;
+        }
+        const input = buildDiscountInput(state);
+        const result = calculateDiscount(input);
+        set({ discountResult: result });
+      },
+
+      clearCart: () =>
+        set({
+          customer: null,
+          newOfflineCustomer: null,
+          items: [],
+          billDiscountPct: 0,
+          bargainAdjustment: 0,
+          finalPriceOverride: null,
+          approvalToken: null,
+          discountResult: null,
+          payments: [],
+        }),
     }),
-
-  removeItem: (productId) =>
-    set((state) => ({
-      items: state.items.filter((i) => i.productId !== productId),
-    })),
-
-  updateQuantity: (productId, qty) =>
-    set((state) => {
-      if (qty <= 0) {
-        return { items: state.items.filter((i) => i.productId !== productId) }
-      }
-      return {
-        items: state.items.map((i) =>
-          i.productId === productId
-            ? {
-                ...i,
-                quantity: qty,
-                lineTotal: calcLineTotal(
-                  i.product.sellingPrice,
-                  i.product.catalogDiscountPct,
-                  qty,
-                ),
-              }
-            : i,
-        ),
-      }
-    }),
-
-  setCustomer: (id) =>
-    set({ customerId: id }),
-
-  setAdditionalDiscount: (amount, pct) =>
-    set({ additionalDiscountAmount: amount, additionalDiscountPct: pct }),
-
-  clear: () =>
-    set({
-      items: [],
-      customerId: null,
-      additionalDiscountAmount: 0,
-      additionalDiscountPct: 0,
-    }),
-
-  holdCurrentCart: (note = '') => {
-    const state = get()
-    if (state.items.length === 0) return
-    const held: HeldBill = {
-      id: crypto.randomUUID(),
-      items: state.items,
-      customerId: state.customerId,
-      additionalDiscountAmount: state.additionalDiscountAmount,
-      additionalDiscountPct: state.additionalDiscountPct,
-      note,
-      heldAt: new Date().toISOString(),
-    }
-    const newHeldBills = [...state.heldBills, held]
-    localStorage.setItem(HELD_BILLS_KEY, JSON.stringify(newHeldBills))
-    set({
-      heldBills: newHeldBills,
-      items: [],
-      customerId: null,
-      additionalDiscountAmount: 0,
-      additionalDiscountPct: 0,
-    })
-  },
-
-  resumeHeldBill: (id) => {
-    const state = get()
-    const bill = state.heldBills.find((b) => b.id === id)
-    if (!bill) return
-    const newHeldBills = state.heldBills.filter((b) => b.id !== id)
-    localStorage.setItem(HELD_BILLS_KEY, JSON.stringify(newHeldBills))
-    set({
-      heldBills: newHeldBills,
-      items: bill.items,
-      customerId: bill.customerId,
-      additionalDiscountAmount: bill.additionalDiscountAmount,
-      additionalDiscountPct: bill.additionalDiscountPct,
-    })
-  },
-
-  discardHeldBill: (id) => {
-    const state = get()
-    const newHeldBills = state.heldBills.filter((b) => b.id !== id)
-    localStorage.setItem(HELD_BILLS_KEY, JSON.stringify(newHeldBills))
-    set({ heldBills: newHeldBills })
-  },
-}))
-
-// --- Computed selectors ---
-
-export function selectSubtotal(state: CartState): number {
-  return state.items.reduce((sum, item) => sum + item.lineTotal, 0)
-}
-
-export function selectCatalogDiscountTotal(state: CartState): number {
-  return state.items.reduce((sum, item) => {
-    const fullPrice = item.product.sellingPrice * item.quantity
-    return sum + (fullPrice - item.lineTotal)
-  }, 0)
-}
-
-export function selectNetAmount(state: CartState): number {
-  const subtotal = selectSubtotal(state)
-  return subtotal - state.additionalDiscountAmount
-}
-
-export function selectItemCount(state: CartState): number {
-  return state.items.reduce((sum, item) => sum + item.quantity, 0)
-}
+    {
+      name: 'inventrack-cart',
+      storage: createJSONStorage(() => sessionStorage),
+    },
+  ),
+);

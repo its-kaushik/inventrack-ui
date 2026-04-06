@@ -1,33 +1,70 @@
-import { create } from 'zustand'
-import type { User, Tenant } from '@/types/models'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { Role } from '@/types/enums';
 
-export interface AuthState {
-  user: User | null
-  accessToken: string | null
-  tenant: Tenant | null
-  isAuthenticated: boolean
-
-  setAuth: (user: User, accessToken: string, tenant: Tenant | null) => void
-  setAccessToken: (token: string) => void
-  setTenant: (tenant: Tenant) => void
-  logout: () => void
+export interface AuthUser {
+  id: string;
+  name: string;
+  tenantId: string | null;
+  role: Role;
+  email: string | null;
+  phone: string | null;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  accessToken: null,
-  tenant: null,
-  isAuthenticated: false,
+interface AuthState {
+  accessToken: string | null;
+  refreshToken: string | null;
+  user: AuthUser | null;
+  isAuthenticated: boolean;
 
-  setAuth: (user, accessToken, tenant) =>
-    set({ user, accessToken, tenant, isAuthenticated: true }),
+  login: (tokens: { accessToken: string; refreshToken: string }, user: AuthUser) => void;
+  logout: () => void;
+  setAccessToken: (token: string) => void;
+}
 
-  setAccessToken: (accessToken) =>
-    set({ accessToken }),
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      isAuthenticated: false,
 
-  setTenant: (tenant) =>
-    set({ tenant }),
+      login: (tokens, user) =>
+        set({
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          user,
+          isAuthenticated: true,
+        }),
 
-  logout: () =>
-    set({ user: null, accessToken: null, tenant: null, isAuthenticated: false }),
-}))
+      logout: () => {
+        // Clear cart store to prevent session leakage between users
+        // (cart store import would be circular, so we clear via sessionStorage key)
+        try {
+          sessionStorage.removeItem('inventrack-cart');
+        } catch {
+          // Ignore if sessionStorage is unavailable
+        }
+
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          isAuthenticated: false,
+        });
+      },
+
+      setAccessToken: (token) => set({ accessToken: token }),
+    }),
+    {
+      name: 'inventrack-auth',
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
+);

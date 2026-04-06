@@ -1,71 +1,59 @@
-import type { AdminDashboardData, TenantInfo, TenantUsageStats } from '@/types/models'
-import type { PaginatedResponse } from '@/types/api'
-import { apiGet, apiPost, apiPatch } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { Tenant } from '@/types/models';
+import type { GstScheme } from '@/types/enums';
 
-export interface TenantFilters {
-  status?: string
-  plan?: string
-  search?: string
-  limit?: number
-  offset?: number
+// ── Types ──
+
+export interface TenantDetail extends Tenant {
+  ownerName: string | null;
+  ownerEmail: string | null;
+  ownerPhone: string | null;
+  skuCount: number;
+  transactionCount: number;
+  userCount: number;
 }
 
-export function adminLogin(email: string, password: string) {
-  return apiPost<{
-    accessToken: string
-    admin: { id: string; email: string; role: string }
-  }>('/admin/login', { email, password })
+export interface CreateTenantRequest {
+  name: string;
+  ownerName: string;
+  ownerEmail: string;
+  ownerPhone: string;
+  gstScheme: GstScheme;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  gstin?: string | null;
 }
 
-export function adminRefresh() {
-  return apiPost<{ accessToken: string }>('/admin/refresh')
+export interface TenantListParams {
+  search?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
 }
 
-export function getAdminDashboard() {
-  return apiGet<AdminDashboardData>('/admin/dashboard')
-}
+// ── API functions ──
 
-export function listTenants(filters?: TenantFilters) {
-  const params = new URLSearchParams()
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value != null) params.set(key, String(value))
-    })
-  }
-  const qs = params.toString()
-  return apiGet<PaginatedResponse<TenantInfo>>(`/admin/tenants${qs ? `?${qs}` : ''}`)
-}
+export const adminApi = {
+  listTenants: (params?: TenantListParams) =>
+    api.get('admin/tenants', { searchParams: params as Record<string, string> }).json<PaginatedResponse<TenantDetail>>(),
 
-export function getTenantDetail(id: string) {
-  return apiGet<TenantInfo>(`/admin/tenants/${id}`)
-}
+  getTenant: (id: string) =>
+    api.get(`admin/tenants/${id}`).json<ApiResponse<TenantDetail>>(),
 
-export function getTenantUsage(id: string) {
-  return apiGet<TenantUsageStats>(`/admin/tenants/${id}/usage`)
-}
+  createTenant: (data: CreateTenantRequest) =>
+    api.post('admin/tenants', { json: data }).json<ApiResponse<TenantDetail>>(),
 
-export function updateTenant(
-  id: string,
-  data: Partial<{ status: 'active' | 'suspended'; plan: 'free' | 'basic' | 'pro' }>,
-) {
-  return apiPatch<TenantInfo>(`/admin/tenants/${id}`, data)
-}
+  updateTenant: (id: string, data: Partial<CreateTenantRequest>) =>
+    api.patch(`admin/tenants/${id}`, { json: data }).json<ApiResponse<Tenant>>(),
 
-// Backward-compatible convenience wrappers
-export function suspendTenant(id: string) {
-  return updateTenant(id, { status: 'suspended' })
-}
+  deleteTenant: (id: string) =>
+    api.delete(`admin/tenants/${id}`),
 
-export function activateTenant(id: string) {
-  return updateTenant(id, { status: 'active' })
-}
+  suspendTenant: (id: string) =>
+    api.post(`admin/tenants/${id}/suspend`).json<ApiResponse<Tenant>>(),
 
-export function changePlan(id: string, plan: 'free' | 'basic' | 'pro') {
-  return updateTenant(id, { plan })
-}
-
-/**
- * @deprecated Use updateTenant() instead. The API no longer has a dedicated extend-trial endpoint.
- */
-/** @deprecated Use updateTenant() instead */
-export const extendTrial = updateTenant
+  reactivateTenant: (id: string) =>
+    api.post(`admin/tenants/${id}/reactivate`).json<ApiResponse<Tenant>>(),
+};

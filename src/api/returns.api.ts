@@ -1,54 +1,85 @@
-import type { PaginatedResponse } from '@/types/api'
-import { apiGet, apiPost } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { ReturnType, RefundMode, ReturnReason } from '@/types/enums';
 
-export interface ReturnItem {
-  billItemId: string
-  quantity: number
+// ── Types ──
+
+export interface SaleReturn {
+  id: string;
+  tenantId: string;
+  returnNumber: string;
+  originalSaleId: string;
+  originalBillNumber: string;
+  customerId: string;
+  customerName: string;
+  returnType: ReturnType;
+  refundMode: RefundMode;
+  totalRefundAmount: string;
+  exchangeSaleId: string | null;
+  notes: string | null;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
 }
 
-export interface CreateReturnData {
-  originalBillId: string
-  refundMode: 'cash' | 'credit_note' | 'exchange'
-  reason?: string
-  items: ReturnItem[]
-  exchangeBillId?: string
+export interface SaleReturnItem {
+  id: string;
+  returnId: string;
+  originalSaleItemId: string;
+  variantId: string;
+  productName: string;
+  variantDescription: string | null;
+  quantity: number;
+  refundPrice: string;
+  reason: ReturnReason;
 }
 
-export interface ReturnRecord {
-  id: string
-  originalBillId: string
-  refundMode: string
-  reason: string | null
-  totalRefundAmount: string
-  items: Array<{
-    billItemId: string
-    productId: string
-    productName: string
-    quantity: number
-    refundAmount: string
-  }>
-  createdAt: string
+export interface SaleReturnDetail extends SaleReturn {
+  items: SaleReturnItem[];
 }
 
-export function createReturn(data: CreateReturnData) {
-  return apiPost<ReturnRecord>('/returns', data)
+export interface CreateReturnRequest {
+  originalSaleId: string;
+  returnType: ReturnType;
+  refundMode: RefundMode;
+  items: CreateReturnItemInput[];
+  exchangeItems?: ExchangeItemInput[];
+  notes?: string | null;
 }
 
-export function listReturns(filters?: {
-  original_bill_id?: string
-  limit?: number
-  offset?: number
-}) {
-  const params = new URLSearchParams()
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value != null) params.set(key, String(value))
-    })
-  }
-  const qs = params.toString()
-  return apiGet<PaginatedResponse<ReturnRecord>>(`/returns${qs ? `?${qs}` : ''}`)
+export interface CreateReturnItemInput {
+  originalSaleItemId: string;
+  variantId: string;
+  quantity: number;
+  reason: ReturnReason;
 }
 
-export function getReturn(id: string) {
-  return apiGet<ReturnRecord>(`/returns/${id}`)
+export interface ExchangeItemInput {
+  variantId: string;
+  quantity: number;
+  mrp: number;
+  costPrice: number;
+  productDiscountPct: number;
+  gstRate: number;
+  hsnCode?: string | null;
+  version: number;
 }
+
+export interface ReturnListParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+// ── API functions ──
+
+export const returnsApi = {
+  list: (params?: ReturnListParams) =>
+    api.get('sales/returns', { searchParams: params as Record<string, string> }).json<PaginatedResponse<SaleReturn>>(),
+
+  get: (id: string) =>
+    api.get(`sales/returns/${id}`).json<ApiResponse<SaleReturnDetail>>(),
+
+  create: (data: CreateReturnRequest) =>
+    api.post('sales/returns', { json: data }).json<ApiResponse<SaleReturnDetail>>(),
+};

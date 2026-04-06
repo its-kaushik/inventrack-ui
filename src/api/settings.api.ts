@@ -1,39 +1,81 @@
-import type { Tenant, TenantSettings } from '@/types/models'
-import { apiGet, apiPost, apiPut, apiPatch } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse } from '@/types/api';
+import type { Tenant, TenantSettings, User } from '@/types/models';
+import type { GstScheme } from '@/types/enums';
 
-export function setupTenant(data: {
-  storeName: string
-  ownerName: string
-  phone: string
-  password: string
-  email?: string
-  address?: string
-  gstin?: string
-  gstScheme?: string
-}) {
-  return apiPost<{ tenant: Tenant; owner: import('@/types/models').User }>('/setup/tenant', data)
+// ── Settings types ──
+
+export interface GstConfig {
+  id: string;
+  tenantId: string;
+  gstin: string | null;
+  gstScheme: GstScheme;
+  stateCode: string | null;
+  isActive: boolean;
 }
 
-export function completeSetupWizard() {
-  return apiPut<void>('/setup/wizard')
+export interface UpdateSettingsRequest {
+  defaultBillDiscountPct?: string;
+  maxDiscountPct?: string;
+  returnWindowDays?: number;
+  shelfAgingThresholdDays?: number;
+  billNumberPrefix?: string;
+  receiptFooterMessage?: string;
+  receiptShowReturnPolicy?: boolean;
+  voidWindowHours?: number;
 }
 
-export function getSettings() {
-  return apiGet<TenantSettings>('/settings')
+export interface UpdateTenantRequest {
+  name?: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  logoUrl?: string | null;
 }
 
-export function updateSettings(data: Partial<TenantSettings>) {
-  return apiPatch<TenantSettings>('/settings', data)
+export interface UpdateGstRequest {
+  gstScheme?: GstScheme;
+  gstin?: string | null;
+  stateCode?: string | null;
 }
 
-export function getStoreSettings() {
-  return apiGet<Tenant>('/settings/store')
+export interface InviteUserRequest {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
 }
 
-export function updateStoreSettings(data: Partial<Tenant>) {
-  return apiPatch<Tenant>('/settings/store', data)
-}
+// ── API functions ──
 
-export function exportData() {
-  return apiPost<{ jobId: string; message: string }>('/settings/export-data')
-}
+export const settingsApi = {
+  // Tenant settings
+  getSettings: () =>
+    api.get('settings').json<ApiResponse<TenantSettings & { tenant: Tenant }>>(),
+
+  updateSettings: (data: UpdateSettingsRequest) =>
+    api.patch('settings', { json: data }).json<ApiResponse<TenantSettings>>(),
+
+  updateTenant: (data: UpdateTenantRequest) =>
+    api.patch('settings', { json: data }).json<ApiResponse<Tenant>>(),
+
+  // GST
+  getGstConfig: () =>
+    api.get('settings/gst').json<ApiResponse<GstConfig>>(),
+
+  updateGstConfig: (data: UpdateGstRequest) =>
+    api.patch('settings/gst', { json: data }).json<ApiResponse<GstConfig>>(),
+
+  // Users
+  getUsers: () =>
+    api.get('users').json<ApiResponse<User[]>>(),
+
+  inviteUser: (data: InviteUserRequest) =>
+    api.post('users/invite', { json: data }).json<ApiResponse<{ inviteLink: string }>>(),
+
+  updateUser: (id: string, data: Partial<Pick<User, 'name' | 'role' | 'isActive'>>) =>
+    api.patch(`users/${id}`, { json: data }).json<ApiResponse<User>>(),
+
+  deactivateUser: (id: string) =>
+    api.delete(`users/${id}`),
+};

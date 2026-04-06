@@ -1,0 +1,245 @@
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryProvider } from '@/components/providers/QueryProvider';
+import { ToastProvider } from '@/components/providers/ToastProvider';
+import { OnlineStatusProvider } from '@/components/providers/OnlineStatusProvider';
+import { AuthGuard, RoleGuard } from '@/components/providers/AuthProvider';
+import { useAuthStore } from '@/stores/auth.store';
+import { useCatalogSync, useBillSync } from '@/hooks/use-sync';
+import { SkeletonPage } from '@/components/shared';
+
+// ── Auth pages (eagerly loaded — small and needed immediately) ──
+import LoginPage from '@/features/auth/LoginPage';
+import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
+import StaffSignupPage from '@/features/auth/StaffSignupPage';
+
+// ── Settings pages (F4 — lazy loaded) ──
+const StoreSettingsPage = lazy(() => import('@/features/settings/StoreSettingsPage'));
+const GstSettingsPage = lazy(() => import('@/features/settings/GstSettingsPage'));
+const UserManagementPage = lazy(() => import('@/features/settings/UserManagementPage'));
+const PinSetupPage = lazy(() => import('@/features/settings/PinSetupPage'));
+
+// ── Product pages (F5 — lazy loaded) ──
+const ProductListPage = lazy(() => import('@/features/products/ProductListPage'));
+const ProductDetailPage = lazy(() => import('@/features/products/ProductDetailPage'));
+const ProductFormPage = lazy(() => import('@/features/products/ProductFormPage'));
+const BulkImportPage = lazy(() => import('@/features/products/BulkImportPage'));
+
+// ── Inventory pages (F6 — lazy loaded) ──
+const StockAdjustmentPage = lazy(() => import('@/features/products/StockAdjustmentPage'));
+const StockMovementPage = lazy(() => import('@/features/products/StockMovementPage'));
+const StockCountPage = lazy(() => import('@/features/products/StockCountPage'));
+
+// ── Supplier pages (F7 — lazy loaded) ──
+const SupplierListPage = lazy(() => import('@/features/purchases/SupplierListPage'));
+const SupplierDetailPage = lazy(() => import('@/features/purchases/SupplierDetailPage'));
+const SupplierFormPage = lazy(() => import('@/features/purchases/SupplierFormPage'));
+
+// ── Purchase pages (F8 — lazy loaded) ──
+const GoodsReceiptPage = lazy(() => import('@/features/purchases/GoodsReceiptPage'));
+const PurchaseReturnPage = lazy(() => import('@/features/purchases/PurchaseReturnPage'));
+
+// ── Customer pages (F9 — lazy loaded) ──
+const CustomerListPage = lazy(() => import('@/features/customers/CustomerListPage'));
+const CustomerDetailPage = lazy(() => import('@/features/customers/CustomerDetailPage'));
+const CustomerFormPage = lazy(() => import('@/features/customers/CustomerFormPage'));
+
+// ── POS pages (F10 — lazy loaded) ──
+const POSPage = lazy(() => import('@/features/pos/POSPage'));
+const PaymentPage = lazy(() => import('@/features/pos/PaymentPage'));
+const ReceiptPage = lazy(() => import('@/features/pos/ReceiptPage'));
+const BillLookupPage = lazy(() => import('@/features/pos/BillLookupPage'));
+const ParkedBillsPage = lazy(() => import('@/features/pos/ParkedBillsPage'));
+const ReturnExchangePage = lazy(() => import('@/features/pos/ReturnExchangePage'));
+
+// ── Credit pages (F11 — lazy loaded) ──
+const CustomerKhataListPage = lazy(() => import('@/features/credit/CustomerKhataListPage'));
+const CustomerLedgerPage = lazy(() => import('@/features/credit/CustomerLedgerPage'));
+const SupplierPayablesPage = lazy(() => import('@/features/credit/SupplierPayablesPage'));
+const SupplierLedgerPage = lazy(() => import('@/features/credit/SupplierLedgerPage'));
+
+// ── Expense & Cash Register pages (F12 — lazy loaded) ──
+const ExpenseListPage = lazy(() => import('@/features/expenses/ExpenseListPage'));
+const ExpenseFormPage = lazy(() => import('@/features/expenses/ExpenseFormPage'));
+const CashRegisterPage = lazy(() => import('@/features/cash-register/CashRegisterPage'));
+
+// ── Label pages (F13 — lazy loaded) ──
+const LabelPrintPage = lazy(() => import('@/features/labels/LabelPrintPage'));
+
+// ── Sync pages (F15 — lazy loaded) ──
+const SyncReviewPage = lazy(() => import('@/features/sync/SyncReviewPage'));
+
+// ── Migration pages (F17 — lazy loaded) ──
+const CustomerKhataImportPage = lazy(() => import('@/features/migration/CustomerKhataImportPage'));
+const SupplierBalanceImportPage = lazy(() => import('@/features/migration/SupplierBalanceImportPage'));
+
+// ── Admin pages (F23 — lazy loaded) ──
+const TenantListPage = lazy(() => import('@/features/admin/TenantListPage'));
+const TenantFormPage = lazy(() => import('@/features/admin/TenantFormPage'));
+
+// ── PO pages (F19 — lazy loaded) ──
+const POListPage = lazy(() => import('@/features/purchases/POListPage'));
+const POFormPage = lazy(() => import('@/features/purchases/POFormPage'));
+const PODetailPage = lazy(() => import('@/features/purchases/PODetailPage'));
+
+// ── Notification pages (F20 — lazy loaded) ──
+const NotificationCenterPage = lazy(() => import('@/features/notifications/NotificationCenterPage'));
+
+// ── Report pages (F21 — lazy loaded) ──
+const ReportsHubPage = lazy(() => import('@/features/reports/ReportsHubPage'));
+const ReportViewerPage = lazy(() => import('@/features/reports/ReportViewerPage'));
+
+// ── Remaining lazy loaded pages ──
+const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'));
+
+// ── Layout components ──
+import { AppShell, POSLayout } from '@/components/layout';
+
+function LazyPage({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<SkeletonPage />}>{children}</Suspense>;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* ── Public routes (no auth) ── */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/signup/:inviteToken" element={<StaffSignupPage />} />
+
+      {/* ── Protected routes (with AppShell layout) ── */}
+      <Route element={<AuthGuard />}>
+        <Route element={<AppShell />}>
+          {/* Default redirect */}
+          <Route index element={<Navigate to="/dashboard" replace />} />
+
+          {/* Dashboard — all roles */}
+          <Route path="/dashboard" element={<LazyPage><DashboardPage /></LazyPage>} />
+
+          {/* Products — all roles can view, owner/manager can create/edit */}
+          <Route path="/products" element={<LazyPage><ProductListPage /></LazyPage>} />
+          <Route path="/products/:id" element={<LazyPage><ProductDetailPage /></LazyPage>} />
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/products/new" element={<LazyPage><ProductFormPage /></LazyPage>} />
+            <Route path="/products/:id/edit" element={<LazyPage><ProductFormPage /></LazyPage>} />
+            <Route path="/products/import" element={<LazyPage><BulkImportPage /></LazyPage>} />
+            <Route path="/products/stock-adjust" element={<LazyPage><StockAdjustmentPage /></LazyPage>} />
+            <Route path="/products/stock-count" element={<LazyPage><StockCountPage /></LazyPage>} />
+          </Route>
+          <Route path="/products/:productId/variants/:variantId/movements" element={<LazyPage><StockMovementPage /></LazyPage>} />
+
+          {/* Labels — all roles */}
+          <Route path="/labels" element={<LazyPage><LabelPrintPage /></LazyPage>} />
+
+          {/* Suppliers — all roles can view, manager+ can create/edit */}
+          <Route path="/suppliers" element={<LazyPage><SupplierListPage /></LazyPage>} />
+          <Route path="/suppliers/:id" element={<LazyPage><SupplierDetailPage /></LazyPage>} />
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/suppliers/new" element={<LazyPage><SupplierFormPage /></LazyPage>} />
+            <Route path="/suppliers/:id/edit" element={<LazyPage><SupplierFormPage /></LazyPage>} />
+          </Route>
+
+          {/* Customers — all roles */}
+          <Route path="/customers" element={<LazyPage><CustomerListPage /></LazyPage>} />
+          <Route path="/customers/:id" element={<LazyPage><CustomerDetailPage /></LazyPage>} />
+          <Route path="/customers/new" element={<LazyPage><CustomerFormPage /></LazyPage>} />
+          <Route path="/customers/:id/edit" element={<LazyPage><CustomerFormPage /></LazyPage>} />
+
+          {/* Credit/Khata — manager+ */}
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/credit" element={<LazyPage><CustomerKhataListPage /></LazyPage>} />
+            <Route path="/credit/customers/:id" element={<LazyPage><CustomerLedgerPage /></LazyPage>} />
+            <Route path="/credit/suppliers" element={<LazyPage><SupplierPayablesPage /></LazyPage>} />
+            <Route path="/credit/suppliers/:id" element={<LazyPage><SupplierLedgerPage /></LazyPage>} />
+          </Route>
+
+          {/* Purchases — manager+ */}
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/purchases" element={<LazyPage><POListPage /></LazyPage>} />
+            <Route path="/purchases/new" element={<LazyPage><POFormPage /></LazyPage>} />
+            <Route path="/purchases/:id" element={<LazyPage><PODetailPage /></LazyPage>} />
+            <Route path="/purchases/receive" element={<LazyPage><GoodsReceiptPage /></LazyPage>} />
+            <Route path="/purchases/return" element={<LazyPage><PurchaseReturnPage /></LazyPage>} />
+          </Route>
+
+          {/* Reports — manager+ */}
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/reports" element={<LazyPage><ReportsHubPage /></LazyPage>} />
+            <Route path="/reports/:reportKey" element={<LazyPage><ReportViewerPage /></LazyPage>} />
+          </Route>
+
+          {/* Expenses — manager+ */}
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/expenses" element={<LazyPage><ExpenseListPage /></LazyPage>} />
+            <Route path="/expenses/new" element={<LazyPage><ExpenseFormPage /></LazyPage>} />
+            <Route path="/cash-register" element={<LazyPage><CashRegisterPage /></LazyPage>} />
+            <Route path="/sync-review" element={<LazyPage><SyncReviewPage /></LazyPage>} />
+
+            {/* Notifications — all roles */}
+            <Route path="/notifications" element={<LazyPage><NotificationCenterPage /></LazyPage>} />
+          </Route>
+
+          {/* Settings — role-gated sub-pages */}
+          <Route element={<RoleGuard roles={['super_admin', 'owner']} />}>
+            <Route path="/settings" element={<LazyPage><StoreSettingsPage /></LazyPage>} />
+            <Route path="/settings/gst" element={<LazyPage><GstSettingsPage /></LazyPage>} />
+            <Route path="/settings/pin" element={<LazyPage><PinSetupPage /></LazyPage>} />
+            <Route path="/migration/customers" element={<LazyPage><CustomerKhataImportPage /></LazyPage>} />
+            <Route path="/migration/suppliers" element={<LazyPage><SupplierBalanceImportPage /></LazyPage>} />
+          </Route>
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/settings/users" element={<LazyPage><UserManagementPage /></LazyPage>} />
+          </Route>
+        </Route>
+
+        {/* ── Super Admin routes ── */}
+        <Route element={<RoleGuard roles={['super_admin']} />}>
+          <Route element={<AppShell />}>
+            <Route path="/admin/tenants" element={<LazyPage><TenantListPage /></LazyPage>} />
+            <Route path="/admin/tenants/new" element={<LazyPage><TenantFormPage /></LazyPage>} />
+          </Route>
+        </Route>
+
+        {/* ── POS routes (dedicated full-screen layout) ── */}
+        <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          <Route element={<POSLayout />}>
+            <Route path="/pos" element={<LazyPage><POSPage /></LazyPage>} />
+            <Route path="/pos/payment" element={<LazyPage><PaymentPage /></LazyPage>} />
+            <Route path="/pos/receipt/:saleId" element={<LazyPage><ReceiptPage /></LazyPage>} />
+            <Route path="/pos/bills" element={<LazyPage><BillLookupPage /></LazyPage>} />
+            <Route path="/pos/parked" element={<LazyPage><ParkedBillsPage /></LazyPage>} />
+            <Route path="/pos/return" element={<LazyPage><ReturnExchangePage /></LazyPage>} />
+          </Route>
+        </Route>
+      </Route>
+
+      {/* ── Catch-all → login ── */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}
+
+/** Mounts catalog & bill sync hooks at app root level (only when authenticated). */
+function SyncManager() {
+  const { isAuthenticated } = useAuthStore();
+  // Hooks must be called unconditionally, but they no-op when not authenticated
+  useCatalogSync();
+  useBillSync();
+  return null;
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <QueryProvider>
+        <OnlineStatusProvider>
+          <AppRoutes />
+          <SyncManager />
+          <ToastProvider />
+        </OnlineStatusProvider>
+      </QueryProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;

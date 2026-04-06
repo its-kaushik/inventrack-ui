@@ -1,22 +1,30 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react';
 
+/** Returns true when the media query matches. */
 export function useMediaQuery(query: string): boolean {
-  const subscribe = (callback: () => void) => {
-    const mql = window.matchMedia(query)
-    mql.addEventListener('change', callback)
-    return () => mql.removeEventListener('change', callback)
-  }
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(query).matches;
+  });
 
-  const getSnapshot = () => window.matchMedia(query).matches
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
 
-  return useSyncExternalStore(subscribe, getSnapshot, () => false)
+    mql.addEventListener('change', handler);
+    setMatches(mql.matches);
+    return () => mql.removeEventListener('change', handler);
+  }, [query]);
+
+  return matches;
 }
 
-// Convenience hooks
-export function useIsMobile() {
-  return !useMediaQuery('(min-width: 1024px)')
+/** Convenience: true when viewport is < 768px (mobile). */
+export function useIsMobile(): boolean {
+  return useMediaQuery('(max-width: 767px)');
 }
 
-export function useIsDesktop() {
-  return useMediaQuery('(min-width: 1024px)')
+/** Convenience: true when viewport >= 1024px (desktop). */
+export function useIsDesktop(): boolean {
+  return useMediaQuery('(min-width: 1024px)');
 }

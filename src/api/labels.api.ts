@@ -1,47 +1,37 @@
-import type { LabelItem } from '@/types/models'
-import { apiGet, apiPost, apiPut } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse } from '@/types/api';
+
+// ── Types ──
 
 export interface LabelTemplate {
-  id: string
-  name: string
-  description: string
-  fields: string[]
-  layout?: { columns: number; labelWidth: string; labelHeight: string }
-  createdAt?: string
+  id: string;
+  name: string;
+  widthMm: number;
+  heightMm: number;
+  description: string;
 }
 
-export function generateLabels(data: {
-  items: Array<{
-    productId: string
-    quantity: number
-  }>
-  templateId?: string
-  format?: 'html' | 'json'
-}) {
-  return apiPost<LabelItem[]>('/labels/generate', { format: 'json', ...data })
+export interface GenerateLabelRequest {
+  templateId: string;
+  items: LabelItem[];
 }
 
-export function getLabelTemplates() {
-  return apiGet<LabelTemplate[]>('/labels/templates')
+export interface LabelItem {
+  variantId: string;
+  productName: string;
+  variantDescription: string;
+  sku: string;
+  barcode: string;
+  mrp: number;
+  quantity: number;
 }
 
-export function createLabelTemplate(data: {
-  name: string
-  description?: string
-  fields: string[]
-  layout?: { columns: number; labelWidth: string; labelHeight: string }
-}) {
-  return apiPost<LabelTemplate>('/labels/templates', data)
-}
+// ── API functions ──
 
-export function updateLabelTemplate(
-  id: string,
-  data: Partial<{
-    name: string
-    description: string
-    fields: string[]
-    layout: { columns: number; labelWidth: string; labelHeight: string }
-  }>,
-) {
-  return apiPut<LabelTemplate>(`/labels/templates/${id}`, data)
-}
+export const labelsApi = {
+  listTemplates: () =>
+    api.get('labels/templates').json<ApiResponse<LabelTemplate[]>>(),
+
+  generatePdf: (data: GenerateLabelRequest) =>
+    api.post('labels/generate', { json: data }).blob(),
+};

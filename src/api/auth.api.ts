@@ -1,49 +1,69 @@
-import type { User } from '@/types/models'
-import { apiGet, apiPost } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse } from '@/types/api';
+import type { User } from '@/types/models';
+import type { AuthUser } from '@/stores/auth.store';
 
-interface LoginResponse {
-  accessToken: string
-  user: User & { setupComplete?: boolean }
+// ── Request types ──
+
+export interface LoginRequest {
+  emailOrPhone: string;
+  password: string;
 }
 
-export function login(phone: string, password: string) {
-  return apiPost<LoginResponse>('/auth/login', {
-    phone,
-    password,
-  })
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
 }
 
-export function refreshToken() {
-  return apiPost<{ accessToken: string }>('/auth/refresh')
+export interface ForgotPasswordRequest {
+  emailOrPhone: string;
 }
 
-export function logout() {
-  return apiPost<void>('/auth/logout')
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
 }
 
-export function forgotPassword(phone: string) {
-  return apiPost<void>('/auth/forgot-password', { phone })
+export interface SignupRequest {
+  inviteToken: string;
+  name: string;
+  phone: string;
+  email: string;
+  password: string;
 }
 
-export function resetPassword(token: string, newPassword: string) {
-  return apiPost<void>('/auth/reset-password', { token, newPassword })
+export interface SignupResponse {
+  user: User;
 }
 
-export function getMe() {
-  return apiGet<User & { tenant: import('@/types/models').Tenant }>('/auth/me')
-}
+// ── API functions ──
 
-export function verifyOtp(phone: string, otp: string) {
-  return apiPost<{ accessToken: string; user: User }>('/auth/verify-otp', { phone, otp })
-}
-
-export function resendOtp(phone: string) {
-  return apiPost<void>('/auth/send-otp', { phone })
-}
-
-// Convenience object export for hooks
 export const authApi = {
-  login,
-  logout,
-  me: getMe,
-}
+  login: (data: LoginRequest) =>
+    api.post('auth/login', { json: data }).json<ApiResponse<LoginResponse>>(),
+
+  refresh: (refreshToken: string) =>
+    api.post('auth/refresh', { json: { refreshToken } }).json<ApiResponse<{ accessToken: string }>>(),
+
+  logout: (refreshToken: string) =>
+    api.post('auth/logout', { json: { refreshToken } }),
+
+  me: () =>
+    api.get('auth/me').json<ApiResponse<User>>(),
+
+  forgotPassword: (data: ForgotPasswordRequest) =>
+    api.post('auth/forgot-password', { json: data }),
+
+  resetPassword: (data: ResetPasswordRequest) =>
+    api.post('auth/reset-password', { json: data }),
+
+  signup: (data: SignupRequest) =>
+    api.post('auth/signup', { json: data }).json<ApiResponse<SignupResponse>>(),
+
+  getInvite: (token: string) =>
+    api.get(`auth/invite/${token}`).json<ApiResponse<{ email: string; role: string; tenantName: string }>>(),
+
+  verifyPin: (pin: string) =>
+    api.post('auth/pin/verify', { json: { pin } }).json<ApiResponse<{ approvalToken: string }>>(),
+};

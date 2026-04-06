@@ -1,32 +1,20 @@
-import { apiGet, apiPatch } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { Notification } from '@/types/models';
 
-export interface Notification {
-  id: string
-  type: 'low_stock' | 'payment_due' | 'discrepancy' | 'daily_summary' | 'info'
-  title: string
-  message: string
-  entityType?: string
-  entityId?: string
-  read: boolean
-  createdAt: string
+export interface NotificationListParams {
+  page?: number;
+  limit?: number;
+  isRead?: string;
 }
 
-export function getUnreadCount() {
-  return apiGet<{ count: number }>('/notifications/unread-count')
-}
+export const notificationsApi = {
+  list: (params?: NotificationListParams) =>
+    api.get('notifications', { searchParams: params as Record<string, string> }).json<PaginatedResponse<Notification>>(),
 
-export function listNotifications(params?: { limit?: number; offset?: number }) {
-  const searchParams = new URLSearchParams()
-  if (params?.limit) searchParams.set('limit', String(params.limit))
-  if (params?.offset) searchParams.set('offset', String(params.offset))
-  const qs = searchParams.toString()
-  return apiGet<{ items: Notification[]; hasMore: boolean }>(`/notifications${qs ? `?${qs}` : ''}`)
-}
+  markAsRead: (id: string) =>
+    api.patch(`notifications/${id}/read`).json<ApiResponse<Notification>>(),
 
-export function markAsRead(id: string) {
-  return apiPatch<{ id: string; readAt: string }>(`/notifications/${id}/read`)
-}
-
-export function markAllAsRead() {
-  return apiPatch<{ markedCount: number }>('/notifications/read-all')
-}
+  markAllAsRead: () =>
+    api.post('notifications/mark-all-read').json<ApiResponse<{ count: number }>>(),
+};

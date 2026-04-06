@@ -1,48 +1,107 @@
-import type { Purchase } from '@/types/models'
-import type { PaginatedResponse } from '@/types/api'
-import { apiGet, apiPost } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { ReceiptPaymentMode } from '@/types/enums';
 
-export interface CreatePurchaseData {
-  supplierId: string
-  poId?: string
-  invoiceNumber?: string | null
-  invoiceDate?: string | null
-  invoiceImageUrl?: string | null
-  totalAmount: number
-  cgstAmount?: number
-  sgstAmount?: number
-  igstAmount?: number
-  isRcm?: boolean
-  items: Array<{
-    productId: string
-    quantity: number
-    costPrice: number
-    gstRate?: number
-    gstAmount?: number
-  }>
+// ── Goods Receipt types ──
+
+export interface GoodsReceipt {
+  id: string;
+  tenantId: string;
+  receiptNumber: string;
+  supplierId: string;
+  supplierName: string;
+  purchaseOrderId: string | null;
+  supplierInvoiceNumber: string | null;
+  supplierInvoiceDate: string | null;
+  paymentMode: ReceiptPaymentMode;
+  totalAmount: string;
+  totalQuantity: number;
+  invoiceImageUrl: string | null;
+  notes: string | null;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
 }
 
-export interface PurchaseFilters {
-  supplier_id?: string
-  limit?: number
-  offset?: number
+export interface GoodsReceiptItem {
+  id: string;
+  receiptId: string;
+  variantId: string;
+  productName: string;
+  variantDescription: string;
+  sku: string;
+  quantityReceived: number;
+  costPrice: string;
+  gstRate: string | null;
+  lineTotal: string;
 }
 
-export function createPurchase(data: CreatePurchaseData) {
-  return apiPost<Purchase>('/purchases', data)
+export interface GoodsReceiptDetail extends GoodsReceipt {
+  items: GoodsReceiptItem[];
 }
 
-export function listPurchases(filters?: PurchaseFilters) {
-  const params = new URLSearchParams()
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value != null) params.set(key, String(value))
-    })
-  }
-  const qs = params.toString()
-  return apiGet<PaginatedResponse<Purchase>>(`/purchases${qs ? `?${qs}` : ''}`)
+export interface CreateGoodsReceiptRequest {
+  supplierId: string;
+  purchaseOrderId?: string | null;
+  supplierInvoiceNumber?: string | null;
+  supplierInvoiceDate?: string | null;
+  paymentMode: ReceiptPaymentMode;
+  notes?: string | null;
+  items: CreateReceiptItemInput[];
 }
 
-export function getPurchase(id: string) {
-  return apiGet<Purchase>(`/purchases/${id}`)
+export interface CreateReceiptItemInput {
+  variantId: string;
+  quantityReceived: number;
+  costPrice: number;
+  gstRate?: number | null;
 }
+
+export interface GoodsReceiptListParams {
+  supplierId?: string;
+  page?: number;
+  limit?: number;
+}
+
+// ── Purchase Return types ──
+
+export interface PurchaseReturn {
+  id: string;
+  tenantId: string;
+  returnNumber: string;
+  supplierId: string;
+  supplierName: string;
+  receiptId: string | null;
+  totalAmount: string;
+  totalQuantity: number;
+  reason: string | null;
+  status: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface CreatePurchaseReturnRequest {
+  supplierId: string;
+  receiptId?: string | null;
+  reason?: string | null;
+  items: { variantId: string; quantity: number; costPrice: number }[];
+}
+
+// ── API functions ──
+
+export const purchasesApi = {
+  // Goods Receipts
+  listReceipts: (params?: GoodsReceiptListParams) =>
+    api.get('goods-receipts', { searchParams: params as Record<string, string> }).json<PaginatedResponse<GoodsReceipt>>(),
+
+  getReceipt: (id: string) =>
+    api.get(`goods-receipts/${id}`).json<ApiResponse<GoodsReceiptDetail>>(),
+
+  createReceipt: (data: CreateGoodsReceiptRequest) =>
+    api.post('goods-receipts', { json: data }).json<ApiResponse<GoodsReceiptDetail>>(),
+
+  // Purchase Returns
+  createReturn: (data: CreatePurchaseReturnRequest) =>
+    api.post('purchase-orders/returns', { json: data }).json<ApiResponse<PurchaseReturn>>(),
+};

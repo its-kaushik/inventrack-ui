@@ -1,62 +1,105 @@
-import type { Expense, ExpenseCategory } from '@/types/models'
-import type { PaginatedResponse } from '@/types/api'
-import { apiGet, apiPost, apiPut, apiDelete } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { ExpensePaymentMode } from '@/types/enums';
 
-export interface ExpenseFilters {
-  category?: string
-  from?: string
-  to?: string
-  is_recurring?: boolean
-  limit?: number
-  offset?: number
+// ── Types ──
+
+export interface Expense {
+  id: string;
+  tenantId: string;
+  categoryId: string;
+  categoryName: string;
+  amount: string;
+  description: string;
+  expenseDate: string;
+  paymentMode: ExpensePaymentMode;
+  receiptImageUrl: string | null;
+  notes: string | null;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
 }
 
-export function listExpenses(filters?: ExpenseFilters) {
-  const params = new URLSearchParams()
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value != null) params.set(key, String(value))
-    })
-  }
-  const qs = params.toString()
-  return apiGet<PaginatedResponse<Expense>>(`/expenses${qs ? `?${qs}` : ''}`)
+export interface ExpenseCategory {
+  id: string;
+  tenantId: string;
+  name: string;
+  createdAt: string;
 }
 
-export function getExpense(id: string) {
-  return apiGet<Expense>(`/expenses/${id}`)
+export interface CreateExpenseRequest {
+  categoryId: string;
+  amount: number;
+  description: string;
+  expenseDate: string;
+  paymentMode: ExpensePaymentMode;
+  notes?: string | null;
 }
 
-export function createExpense(data: {
-  expenseDate: string
-  category: string
-  amount: number
-  description?: string
-  isRecurring?: boolean
-  recurrenceInterval?: 'monthly' | 'quarterly' | 'yearly'
-  receiptImageUrl?: string
-}) {
-  return apiPost<Expense>('/expenses', data)
+export interface ExpenseListParams {
+  startDate?: string;
+  endDate?: string;
+  categoryId?: string;
+  page?: number;
+  limit?: number;
 }
 
-export function updateExpense(
-  id: string,
-  data: Partial<{
-    expenseDate: string
-    category: string
-    amount: number
-    description: string
-    isRecurring: boolean
-    recurrenceInterval: 'monthly' | 'quarterly' | 'yearly'
-    receiptImageUrl: string
-  }>,
-) {
-  return apiPut<Expense>(`/expenses/${id}`, data)
+export interface CashRegister {
+  id: string;
+  tenantId: string;
+  date: string;
+  openingBalance: string;
+  closingBalance: string | null;
+  totalCashSales: string;
+  totalCashReceived: string;
+  totalCashExpenses: string;
+  totalCashPaidToSuppliers: string;
+  expectedCash: string;
+  actualCash: string | null;
+  variance: string | null;
+  status: 'open' | 'closed';
+  openedAt: string;
+  closedAt: string | null;
+  openedBy: string;
+  openedByName: string;
+  closedBy: string | null;
+  closedByName: string | null;
+  notes: string | null;
 }
 
-export function deleteExpense(id: string) {
-  return apiDelete<void>(`/expenses/${id}`)
-}
+// ── API functions ──
 
-export function listExpenseCategories() {
-  return apiGet<ExpenseCategory[]>('/expenses/categories')
-}
+export const expensesApi = {
+  // Expenses
+  list: (params?: ExpenseListParams) =>
+    api.get('expenses', { searchParams: params as Record<string, string> }).json<PaginatedResponse<Expense>>(),
+
+  get: (id: string) =>
+    api.get(`expenses/${id}`).json<ApiResponse<Expense>>(),
+
+  create: (data: CreateExpenseRequest) =>
+    api.post('expenses', { json: data }).json<ApiResponse<Expense>>(),
+
+  delete: (id: string) =>
+    api.delete(`expenses/${id}`),
+
+  // Categories
+  listCategories: () =>
+    api.get('expenses/categories').json<ApiResponse<ExpenseCategory[]>>(),
+
+  createCategory: (data: { name: string }) =>
+    api.post('expenses/categories', { json: data }).json<ApiResponse<ExpenseCategory>>(),
+
+  // Cash Register
+  openRegister: (data: { openingBalance: number; notes?: string }) =>
+    api.post('cash-register/open', { json: data }).json<ApiResponse<CashRegister>>(),
+
+  closeRegister: (data: { actualCash: number; notes?: string }) =>
+    api.post('cash-register/close', { json: data }).json<ApiResponse<CashRegister>>(),
+
+  getCurrentRegister: () =>
+    api.get('cash-register/current').json<ApiResponse<CashRegister | null>>(),
+
+  getRegisterByDate: (date: string) =>
+    api.get(`cash-register/${date}`).json<ApiResponse<CashRegister>>(),
+};

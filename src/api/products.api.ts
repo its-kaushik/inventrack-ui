@@ -1,100 +1,135 @@
-import type { Product } from '@/types/models'
-// Note: GET /products returns data as Product[] directly (not PaginatedResponse)
-// Pagination info comes from meta.has_more in the ApiResponse envelope
-import { apiGet, apiPost, apiPut, apiDelete } from '@/api/client'
+import { api } from './client';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { Product, ProductVariant, Category, Brand } from '@/types/models';
 
-export interface ProductFilters {
-  category_id?: string
-  brand_id?: string
-  search?: string
-  is_active?: boolean
-  limit?: number
-  offset?: number
-  updated_after?: string
+// ── Request types ──
+
+export interface ProductListParams {
+  search?: string;
+  categoryId?: string;
+  brandId?: string;
+  isArchived?: string;
+  page?: number;
+  limit?: number;
 }
 
-export function listProducts(filters?: ProductFilters) {
-  const params = new URLSearchParams()
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value != null) params.set(key, String(value))
-    })
-  }
-  const qs = params.toString()
-  return apiGet<Product[]>(`/products${qs ? `?${qs}` : ''}`)
+export interface CreateProductRequest {
+  name: string;
+  brandId: string;
+  categoryId: string;
+  hsnCode?: string | null;
+  description?: string | null;
+  hasVariants: boolean;
+  productDiscountPct?: number;
+  gstRate?: string | null;
+  /** For simple products */
+  costPrice?: number;
+  mrp?: number;
+  initialQuantity?: number;
+  lowStockThreshold?: number | null;
+  /** For variant products */
+  variants?: CreateVariantInput[];
 }
 
-// NOTE: The search endpoint may also return a `similarity` score field per result.
-// This is not part of the core Product type. If the UI needs to display it,
-// define a `ProductSearchResult` type extending Product with `similarity?: number`.
-export function searchProducts(query: string) {
-  return apiGet<Product[]>(`/products/search?q=${encodeURIComponent(query)}`)
+export interface CreateVariantInput {
+  attributes: Record<string, string>;
+  costPrice: number;
+  mrp: number;
+  initialQuantity: number;
+  lowStockThreshold?: number | null;
 }
 
-export function getProduct(id: string) {
-  return apiGet<Product>(`/products/${id}`)
+export interface UpdateProductRequest {
+  name?: string;
+  brandId?: string;
+  categoryId?: string;
+  hsnCode?: string | null;
+  description?: string | null;
+  productDiscountPct?: number;
+  gstRate?: string | null;
 }
 
-export function createProduct(data: {
-  name: string
-  sku: string
-  barcode?: string
-  categoryId: string
-  subTypeId?: string | null
-  brandId?: string | null
-  size?: string | null
-  color?: string | null
-  hsnCode?: string | null
-  gstRate?: number
-  sellingPrice: number
-  costPrice?: number
-  mrp?: number | null
-  catalogDiscountPct?: number
-  minStockLevel?: number
-  reorderPoint?: number | null
-  description?: string | null
-  imageUrls?: string[]
-}) {
-  return apiPost<Product>('/products', data)
+export interface ProductDetail extends Product {
+  variants: ProductVariant[];
+  images: ProductImage[];
+  category?: Category;
+  brand?: Brand;
 }
 
-export function updateProduct(
-  id: string,
-  data: Partial<{
-    name: string
-    sku: string
-    barcode: string
-    categoryId: string
-    subTypeId: string | null
-    brandId: string | null
-    size: string | null
-    color: string | null
-    hsnCode: string | null
-    gstRate: number
-    sellingPrice: number
-    costPrice: number
-    mrp: number | null
-    catalogDiscountPct: number
-    minStockLevel: number
-    reorderPoint: number | null
-    description: string | null
-    imageUrls: string[]
-    isActive: boolean
-  }>,
-) {
-  return apiPut<Product>(`/products/${id}`, data)
+export interface ProductImage {
+  id: string;
+  productId: string;
+  url: string;
+  isPrimary: boolean;
+  sortOrder: number;
 }
 
-export function deleteProduct(id: string) {
-  return apiDelete<void>(`/products/${id}`)
+export interface HsnCode {
+  code: string;
+  description: string;
 }
 
-export function generateBarcode(id: string) {
-  return apiPost<{ barcode: string }>(`/products/${id}/barcode`)
+export interface BulkImportResult {
+  imported: number;
+  skipped: number;
+  errors: { row: number; message: string }[];
 }
 
-export function getImportJobStatus(jobId: string) {
-  return apiGet<{ jobId: string; status: string; progress: number; errors?: string[] }>(
-    `/products/import/${jobId}/status`,
-  )
-}
+// ── API functions ──
+
+export const productsApi = {
+  // Products
+  list: (params?: ProductListParams) =>
+    api.get('products', { searchParams: params as Record<string, string> }).json<PaginatedResponse<Product>>(),
+
+  get: (id: string) =>
+    api.get(`products/${id}`).json<ApiResponse<ProductDetail>>(),
+
+  create: (data: CreateProductRequest) =>
+    api.post('products', { json: data }).json<ApiResponse<ProductDetail>>(),
+
+  update: (id: string, data: UpdateProductRequest) =>
+    api.patch(`products/${id}`, { json: data }).json<ApiResponse<Product>>(),
+
+  archive: (id: string) =>
+    api.delete(`products/${id}`),
+
+  unarchive: (id: string) =>
+    api.post(`products/${id}/unarchive`).json<ApiResponse<Product>>(),
+
+  // Images
+  getUploadUrl: (productId: string, fileName: string) =>
+    api.post(`products/${productId}/images/upload-url`, { json: { fileName } })
+      .json<ApiResponse<{ uploadUrl: string; key: string }>>(),
+
+  confirmImage: (productId: string, data: { key: string; isPrimary?: boolean }) =>
+    api.post(`products/${productId}/images`, { json: data }).json<ApiResponse<ProductImage>>(),
+
+  deleteImage: (productId: string, imageId: string) =>
+    api.delete(`products/${productId}/images/${imageId}`),
+
+  // Categories
+  listCategories: () =>
+    api.get('products/categories').json<ApiResponse<Category[]>>(),
+
+  createCategory: (data: { name: string; parentId?: string | null }) =>
+    api.post('products/categories', { json: data }).json<ApiResponse<Category>>(),
+
+  // Brands
+  listBrands: () =>
+    api.get('products/brands').json<ApiResponse<Brand[]>>(),
+
+  createBrand: (data: { name: string }) =>
+    api.post('products/brands', { json: data }).json<ApiResponse<Brand>>(),
+
+  // HSN Codes
+  searchHsnCodes: (search: string) =>
+    api.get('products/hsn-codes', { searchParams: { search } }).json<ApiResponse<HsnCode[]>>(),
+
+  // Bulk import
+  downloadTemplate: () =>
+    api.get('migration/templates/products').blob(),
+
+  bulkImport: (data: FormData) =>
+    api.post('migration/import/products', { body: data }).json<ApiResponse<BulkImportResult>>(),
+};

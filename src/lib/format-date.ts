@@ -1,23 +1,43 @@
-import { formatDistanceToNow } from 'date-fns'
+import { format, parseISO, isValid } from 'date-fns';
 
-function toDate(date: Date | string): Date {
-  return typeof date === 'string' ? new Date(date) : date
+/** Parse ISO string or Date, returns null if invalid. */
+function toDate(input: string | Date | null | undefined): Date | null {
+  if (!input) return null;
+  const d = typeof input === 'string' ? parseISO(input) : input;
+  return isValid(d) ? d : null;
 }
 
-function pad(n: number): string {
-  return n.toString().padStart(2, '0')
+/** Format as "05 Apr 2026" */
+export function formatDate(input: string | Date | null | undefined): string {
+  const d = toDate(input);
+  return d ? format(d, 'dd MMM yyyy') : '—';
 }
 
-export function formatDate(date: Date | string): string {
-  const d = toDate(date)
-  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`
+/** Format as "05 Apr 2026, 2:30 PM" */
+export function formatDateTime(input: string | Date | null | undefined): string {
+  const d = toDate(input);
+  return d ? format(d, 'dd MMM yyyy, h:mm a') : '—';
 }
 
-export function formatDateTime(date: Date | string): string {
-  const d = toDate(date)
-  return `${formatDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+/** Format as "2:30 PM" */
+export function formatTime(input: string | Date | null | undefined): string {
+  const d = toDate(input);
+  return d ? format(d, 'h:mm a') : '—';
 }
 
-export function formatRelative(date: Date | string): string {
-  return formatDistanceToNow(toDate(date), { addSuffix: true })
+/** Format as "05/04/2026" (DD/MM/YYYY — Indian format) */
+export function formatDateShort(input: string | Date | null | undefined): string {
+  const d = toDate(input);
+  return d ? format(d, 'dd/MM/yyyy') : '—';
+}
+
+/** Format as "Apr 2026" */
+export function formatMonthYear(input: string | Date | null | undefined): string {
+  const d = toDate(input);
+  return d ? format(d, 'MMM yyyy') : '—';
+}
+
+/** Format as ISO date string "2026-04-05" for API params. */
+export function toISODate(input: Date): string {
+  return format(input, 'yyyy-MM-dd');
 }

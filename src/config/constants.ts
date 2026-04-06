@@ -1,21 +1,18 @@
-export const APP_NAME = 'InvenTrack'
-
-export const DEFAULT_PAGINATION_LIMIT = 20
-
-export const DEBOUNCE_DELAY_MS = 300
-
-export const TOKEN_REFRESH_INTERVAL_MS = 4 * 60 * 1000 // 4 minutes
-
-export const MAX_DISCOUNT_PERCENT = 50
-
-export const MAX_DISCOUNT_ABSOLUTE = 10_000 // INR
-
-export const LOW_STOCK_THRESHOLD = 10
-
-export const GST_RATES = [0, 5, 12, 18, 28] as const
-
-export const RECEIPT_WIDTH_MM = 80
-
-export const CURRENCY_CODE = 'INR'
-
-export const CURRENCY_LOCALE = 'en-IN'
+export const CONSTANTS = {
+  PAGINATION: { DEFAULT_LIMIT: 50 },
+  DEBOUNCE: { SEARCH_MS: 300 },
+  POS: {
+    BARCODE_RAPID_KEYSTROKE_MS: 50,
+    BARCODE_SCAN_TIMEOUT_MS: 3000,
+  },
+  DISCOUNT: {
+    GREEN_MAX: 20,
+    AMBER_MAX: 30,
+  },
+  OFFLINE: {
+    CATALOG_REFRESH_INTERVAL_MS: 5 * 60 * 1000,
+    MAX_OFFLINE_BILLS: 100,
+  },
+  TOAST_DURATION_MS: 3000,
+  PARKED_BILL_EXPIRY_HOURS: 24,
+} as const;
