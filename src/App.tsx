@@ -60,6 +60,9 @@ const ExpenseListPage = lazy(() => import('@/features/expenses/ExpenseListPage')
 const ExpenseFormPage = lazy(() => import('@/features/expenses/ExpenseFormPage'));
 const CashRegisterPage = lazy(() => import('@/features/cash-register/CashRegisterPage'));
 
+// ── Label pages (F13 — lazy loaded) ──
+const LabelPrintPage = lazy(() => import('@/features/labels/LabelPrintPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
@@ -100,6 +103,9 @@ function AppRoutes() {
             <Route path="/products/stock-count" element={<LazyPage><StockCountPage /></LazyPage>} />
           </Route>
           <Route path="/products/:productId/variants/:variantId/movements" element={<LazyPage><StockMovementPage /></LazyPage>} />
+
+          {/* Labels — all roles */}
+          <Route path="/labels" element={<LazyPage><LabelPrintPage /></LazyPage>} />
 
           {/* Suppliers — all roles can view, manager+ can create/edit */}
           <Route path="/suppliers" element={<LazyPage><SupplierListPage /></LazyPage>} />
