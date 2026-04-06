@@ -1,84 +1,64 @@
-import { createContext, useContext, useMemo } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuthStore } from '@/stores/auth.store';
+import { useMe } from '@/hooks/use-auth';
 import type { Role } from '@/types/enums';
-import type { User } from '@/types/models';
-
-// ── Types ──
-
-const AUTH_STORAGE_KEY = 'inventrack-auth';
-
-interface AuthData {
-  accessToken: string;
-  user: User;
-}
-
-interface AuthContextValue {
-  isAuthenticated: boolean;
-  user: User | null;
-  accessToken: string | null;
-}
-
-// ── Helpers ──
-
-function getStoredAuth(): AuthData | null {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as AuthData;
-    if (!parsed.accessToken || !parsed.user) return null;
-
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-// ── Auth Context ──
-
-const AuthContext = createContext<AuthContextValue>({
-  isAuthenticated: false,
-  user: null,
-  accessToken: null,
-});
-
-export function useAuth(): AuthContextValue {
-  return useContext(AuthContext);
-}
 
 // ── AuthGuard ──
 // Wraps routes that require authentication.
-// Reads auth state from localStorage on every render so it stays
-// in sync even after another tab logs out.
+// Reads auth state from Zustand (persisted in localStorage).
+// Validates the stored token via /auth/me on mount.
 
 export function AuthGuard() {
-  const auth = getStoredAuth();
-
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      isAuthenticated: !!auth,
-      user: auth?.user ?? null,
-      accessToken: auth?.accessToken ?? null,
-    }),
-    // Re-derive when the serialised token changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [auth?.accessToken],
-  );
+  const { isAuthenticated } = useAuthStore();
+  const { isLoading, isError } = useMe();
 
   // Not authenticated → redirect to login
-  if (!auth) {
+  if (!isAuthenticated || isError) {
     return <Navigate to="/login" replace />;
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      <Outlet />
-    </AuthContext.Provider>
-  );
+  // Token is being validated
+  if (isLoading) {
+    return <AuthLoadingSkeleton />;
+  }
+
+  return <Outlet />;
 }
 
-// ── Loading skeleton shown while auth state resolves ──
+// ── RoleGuard ──
+// Accepts an array of allowed roles. If the current user's role is
+// not in the list, redirect to /dashboard.
+
+interface RoleGuardProps {
+  roles: Role[];
+  children?: React.ReactNode;
+}
+
+export function RoleGuard({ roles, children }: RoleGuardProps) {
+  const { user } = useAuthStore();
+
+  // Still loading (AuthGuard should catch this, but be defensive)
+  if (!user) {
+    return <AuthLoadingSkeleton />;
+  }
+
+  if (!roles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children ? <>{children}</> : <Outlet />;
+}
+
+// ── useAuth hook ──
+// Convenience hook to access auth state from components.
+
+export function useAuth() {
+  const { isAuthenticated, user, accessToken } = useAuthStore();
+  return { isAuthenticated, user, accessToken };
+}
+
+// ── Loading skeleton ──
 
 function AuthLoadingSkeleton() {
   return (
@@ -92,31 +72,4 @@ function AuthLoadingSkeleton() {
       </div>
     </div>
   );
-}
-
-// ── RoleGuard ──
-// Accepts an array of allowed roles. If the current user's role is
-// not in the list, redirect to /dashboard.
-
-interface RoleGuardProps {
-  roles: Role[];
-  children?: React.ReactNode;
-}
-
-export function RoleGuard({ roles, children }: RoleGuardProps) {
-  const { user } = useAuth();
-
-  // Still loading or not authenticated (AuthGuard should catch this,
-  // but be defensive)
-  if (!user) {
-    return <AuthLoadingSkeleton />;
-  }
-
-  if (!roles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Render explicit children if provided, otherwise render
-  // nested <Route> elements via Outlet.
-  return children ? <>{children}</> : <Outlet />;
 }
