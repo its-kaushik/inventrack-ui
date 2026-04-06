@@ -4,6 +4,8 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { OnlineStatusProvider } from '@/components/providers/OnlineStatusProvider';
 import { AuthGuard, RoleGuard } from '@/components/providers/AuthProvider';
+import { useAuthStore } from '@/stores/auth.store';
+import { useCatalogSync, useBillSync } from '@/hooks/use-sync';
 import { SkeletonPage } from '@/components/shared';
 
 // ── Auth pages (eagerly loaded — small and needed immediately) ──
@@ -62,6 +64,9 @@ const CashRegisterPage = lazy(() => import('@/features/cash-register/CashRegiste
 
 // ── Label pages (F13 — lazy loaded) ──
 const LabelPrintPage = lazy(() => import('@/features/labels/LabelPrintPage'));
+
+// ── Sync pages (F15 — lazy loaded) ──
+const SyncReviewPage = lazy(() => import('@/features/sync/SyncReviewPage'));
 
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'));
@@ -146,6 +151,7 @@ function AppRoutes() {
             <Route path="/expenses" element={<LazyPage><ExpenseListPage /></LazyPage>} />
             <Route path="/expenses/new" element={<LazyPage><ExpenseFormPage /></LazyPage>} />
             <Route path="/cash-register" element={<LazyPage><CashRegisterPage /></LazyPage>} />
+            <Route path="/sync-review" element={<LazyPage><SyncReviewPage /></LazyPage>} />
           </Route>
 
           {/* Settings — role-gated sub-pages */}
@@ -177,12 +183,22 @@ function AppRoutes() {
   );
 }
 
+/** Mounts catalog & bill sync hooks at app root level (only when authenticated). */
+function SyncManager() {
+  const { isAuthenticated } = useAuthStore();
+  // Hooks must be called unconditionally, but they no-op when not authenticated
+  useCatalogSync();
+  useBillSync();
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <QueryProvider>
         <OnlineStatusProvider>
           <AppRoutes />
+          <SyncManager />
           <ToastProvider />
         </OnlineStatusProvider>
       </QueryProvider>
