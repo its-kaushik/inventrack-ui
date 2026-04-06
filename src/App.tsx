@@ -17,9 +17,14 @@ const GstSettingsPage = lazy(() => import('@/features/settings/GstSettingsPage')
 const UserManagementPage = lazy(() => import('@/features/settings/UserManagementPage'));
 const PinSetupPage = lazy(() => import('@/features/settings/PinSetupPage'));
 
+// ── Product pages (F5 — lazy loaded) ──
+const ProductListPage = lazy(() => import('@/features/products/ProductListPage'));
+const ProductDetailPage = lazy(() => import('@/features/products/ProductDetailPage'));
+const ProductFormPage = lazy(() => import('@/features/products/ProductFormPage'));
+const BulkImportPage = lazy(() => import('@/features/products/BulkImportPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
-const ProductListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Products" milestone="F5" /> })));
 const SupplierListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Suppliers" milestone="F7" /> })));
 const CustomerListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Customers" milestone="F9" /> })));
 const CreditPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Credit / Khata" milestone="F11" /> })));
@@ -52,8 +57,14 @@ function AppRoutes() {
           {/* Dashboard — all roles */}
           <Route path="/dashboard" element={<LazyPage><DashboardPage /></LazyPage>} />
 
-          {/* Products — all roles */}
+          {/* Products — all roles can view, owner/manager can create/edit */}
           <Route path="/products" element={<LazyPage><ProductListPage /></LazyPage>} />
+          <Route path="/products/:id" element={<LazyPage><ProductDetailPage /></LazyPage>} />
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/products/new" element={<LazyPage><ProductFormPage /></LazyPage>} />
+            <Route path="/products/:id/edit" element={<LazyPage><ProductFormPage /></LazyPage>} />
+            <Route path="/products/import" element={<LazyPage><BulkImportPage /></LazyPage>} />
+          </Route>
 
           {/* Suppliers — manager+ */}
           <Route path="/suppliers" element={<LazyPage><SupplierListPage /></LazyPage>} />
