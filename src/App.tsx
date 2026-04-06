@@ -55,11 +55,15 @@ const CustomerLedgerPage = lazy(() => import('@/features/credit/CustomerLedgerPa
 const SupplierPayablesPage = lazy(() => import('@/features/credit/SupplierPayablesPage'));
 const SupplierLedgerPage = lazy(() => import('@/features/credit/SupplierLedgerPage'));
 
+// ── Expense & Cash Register pages (F12 — lazy loaded) ──
+const ExpenseListPage = lazy(() => import('@/features/expenses/ExpenseListPage'));
+const ExpenseFormPage = lazy(() => import('@/features/expenses/ExpenseFormPage'));
+const CashRegisterPage = lazy(() => import('@/features/cash-register/CashRegisterPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
 const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
-const ExpensesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Expenses" milestone="F12" /> })));
 
 // ── Layout components ──
 import { AppShell, POSLayout } from '@/components/layout';
@@ -133,7 +137,9 @@ function AppRoutes() {
 
           {/* Expenses — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
-            <Route path="/expenses" element={<LazyPage><ExpensesPage /></LazyPage>} />
+            <Route path="/expenses" element={<LazyPage><ExpenseListPage /></LazyPage>} />
+            <Route path="/expenses/new" element={<LazyPage><ExpenseFormPage /></LazyPage>} />
+            <Route path="/cash-register" element={<LazyPage><CashRegisterPage /></LazyPage>} />
           </Route>
 
           {/* Settings — role-gated sub-pages */}
