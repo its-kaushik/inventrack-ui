@@ -42,13 +42,19 @@ const CustomerListPage = lazy(() => import('@/features/customers/CustomerListPag
 const CustomerDetailPage = lazy(() => import('@/features/customers/CustomerDetailPage'));
 const CustomerFormPage = lazy(() => import('@/features/customers/CustomerFormPage'));
 
+// ── POS pages (F10 — lazy loaded) ──
+const POSPage = lazy(() => import('@/features/pos/POSPage'));
+const PaymentPage = lazy(() => import('@/features/pos/PaymentPage'));
+const ReceiptPage = lazy(() => import('@/features/pos/ReceiptPage'));
+const BillLookupPage = lazy(() => import('@/features/pos/BillLookupPage'));
+const ParkedBillsPage = lazy(() => import('@/features/pos/ParkedBillsPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
 const CreditPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Credit / Khata" milestone="F11" /> })));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
 const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
 const ExpensesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Expenses" milestone="F12" /> })));
-const POSPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Point of Sale" milestone="F10" /> })));
 
 // ── Layout components ──
 import { AppShell, POSLayout } from '@/components/layout';
@@ -137,6 +143,10 @@ function AppRoutes() {
         <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
           <Route element={<POSLayout />}>
             <Route path="/pos" element={<LazyPage><POSPage /></LazyPage>} />
+            <Route path="/pos/payment" element={<LazyPage><PaymentPage /></LazyPage>} />
+            <Route path="/pos/receipt/:saleId" element={<LazyPage><ReceiptPage /></LazyPage>} />
+            <Route path="/pos/bills" element={<LazyPage><BillLookupPage /></LazyPage>} />
+            <Route path="/pos/parked" element={<LazyPage><ParkedBillsPage /></LazyPage>} />
           </Route>
         </Route>
       </Route>

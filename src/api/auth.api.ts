@@ -63,4 +63,7 @@ export const authApi = {
 
   getInvite: (token: string) =>
     api.get(`auth/invite/${token}`).json<ApiResponse<{ email: string; role: string; tenantName: string }>>(),
+
+  verifyPin: (pin: string) =>
+    api.post('auth/pin/verify', { json: { pin } }).json<ApiResponse<{ approvalToken: string }>>(),
 };
