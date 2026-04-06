@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Force 16px on inputs to prevent iOS Safari zoom */
+@layer base {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Minimum touch target enforcement */
+@layer utilities {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Reset */
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
