@@ -50,6 +50,7 @@ const PaymentPage = lazy(() => import('@/features/pos/PaymentPage'));
 const ReceiptPage = lazy(() => import('@/features/pos/ReceiptPage'));
 const BillLookupPage = lazy(() => import('@/features/pos/BillLookupPage'));
 const ParkedBillsPage = lazy(() => import('@/features/pos/ParkedBillsPage'));
+const ReturnExchangePage = lazy(() => import('@/features/pos/ReturnExchangePage'));
 
 // ── Credit pages (F11 — lazy loaded) ──
 const CustomerKhataListPage = lazy(() => import('@/features/credit/CustomerKhataListPage'));
@@ -191,6 +192,7 @@ function AppRoutes() {
             <Route path="/pos/receipt/:saleId" element={<LazyPage><ReceiptPage /></LazyPage>} />
             <Route path="/pos/bills" element={<LazyPage><BillLookupPage /></LazyPage>} />
             <Route path="/pos/parked" element={<LazyPage><ParkedBillsPage /></LazyPage>} />
+            <Route path="/pos/return" element={<LazyPage><ReturnExchangePage /></LazyPage>} />
           </Route>
         </Route>
       </Route>
