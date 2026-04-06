@@ -64,7 +64,7 @@ const CashRegisterPage = lazy(() => import('@/features/cash-register/CashRegiste
 const LabelPrintPage = lazy(() => import('@/features/labels/LabelPrintPage'));
 
 // ── Placeholder pages for future milestones (lazy loaded) ──
-const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
+const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
 const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
 
