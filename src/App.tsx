@@ -23,6 +23,11 @@ const ProductDetailPage = lazy(() => import('@/features/products/ProductDetailPa
 const ProductFormPage = lazy(() => import('@/features/products/ProductFormPage'));
 const BulkImportPage = lazy(() => import('@/features/products/BulkImportPage'));
 
+// ── Inventory pages (F6 — lazy loaded) ──
+const StockAdjustmentPage = lazy(() => import('@/features/products/StockAdjustmentPage'));
+const StockMovementPage = lazy(() => import('@/features/products/StockMovementPage'));
+const StockCountPage = lazy(() => import('@/features/products/StockCountPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
 const SupplierListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Suppliers" milestone="F7" /> })));
@@ -64,7 +69,10 @@ function AppRoutes() {
             <Route path="/products/new" element={<LazyPage><ProductFormPage /></LazyPage>} />
             <Route path="/products/:id/edit" element={<LazyPage><ProductFormPage /></LazyPage>} />
             <Route path="/products/import" element={<LazyPage><BulkImportPage /></LazyPage>} />
+            <Route path="/products/stock-adjust" element={<LazyPage><StockAdjustmentPage /></LazyPage>} />
+            <Route path="/products/stock-count" element={<LazyPage><StockCountPage /></LazyPage>} />
           </Route>
+          <Route path="/products/:productId/variants/:variantId/movements" element={<LazyPage><StockMovementPage /></LazyPage>} />
 
           {/* Suppliers — manager+ */}
           <Route path="/suppliers" element={<LazyPage><SupplierListPage /></LazyPage>} />
