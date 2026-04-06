@@ -49,9 +49,14 @@ const ReceiptPage = lazy(() => import('@/features/pos/ReceiptPage'));
 const BillLookupPage = lazy(() => import('@/features/pos/BillLookupPage'));
 const ParkedBillsPage = lazy(() => import('@/features/pos/ParkedBillsPage'));
 
+// ── Credit pages (F11 — lazy loaded) ──
+const CustomerKhataListPage = lazy(() => import('@/features/credit/CustomerKhataListPage'));
+const CustomerLedgerPage = lazy(() => import('@/features/credit/CustomerLedgerPage'));
+const SupplierPayablesPage = lazy(() => import('@/features/credit/SupplierPayablesPage'));
+const SupplierLedgerPage = lazy(() => import('@/features/credit/SupplierLedgerPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
-const CreditPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Credit / Khata" milestone="F11" /> })));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
 const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
 const ExpensesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Expenses" milestone="F12" /> })));
@@ -108,7 +113,10 @@ function AppRoutes() {
 
           {/* Credit/Khata — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
-            <Route path="/credit" element={<LazyPage><CreditPage /></LazyPage>} />
+            <Route path="/credit" element={<LazyPage><CustomerKhataListPage /></LazyPage>} />
+            <Route path="/credit/customers/:id" element={<LazyPage><CustomerLedgerPage /></LazyPage>} />
+            <Route path="/credit/suppliers" element={<LazyPage><SupplierPayablesPage /></LazyPage>} />
+            <Route path="/credit/suppliers/:id" element={<LazyPage><SupplierLedgerPage /></LazyPage>} />
           </Route>
 
           {/* Purchases — manager+ */}
