@@ -72,6 +72,10 @@ const SyncReviewPage = lazy(() => import('@/features/sync/SyncReviewPage'));
 const CustomerKhataImportPage = lazy(() => import('@/features/migration/CustomerKhataImportPage'));
 const SupplierBalanceImportPage = lazy(() => import('@/features/migration/SupplierBalanceImportPage'));
 
+// ── Admin pages (F23 — lazy loaded) ──
+const TenantListPage = lazy(() => import('@/features/admin/TenantListPage'));
+const TenantFormPage = lazy(() => import('@/features/admin/TenantFormPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
@@ -168,6 +172,14 @@ function AppRoutes() {
           </Route>
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
             <Route path="/settings/users" element={<LazyPage><UserManagementPage /></LazyPage>} />
+          </Route>
+        </Route>
+
+        {/* ── Super Admin routes ── */}
+        <Route element={<RoleGuard roles={['super_admin']} />}>
+          <Route element={<AppShell />}>
+            <Route path="/admin/tenants" element={<LazyPage><TenantListPage /></LazyPage>} />
+            <Route path="/admin/tenants/new" element={<LazyPage><TenantFormPage /></LazyPage>} />
           </Route>
         </Route>
 
