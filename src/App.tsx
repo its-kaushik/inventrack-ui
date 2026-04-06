@@ -85,9 +85,12 @@ const PODetailPage = lazy(() => import('@/features/purchases/PODetailPage'));
 // ── Notification pages (F20 — lazy loaded) ──
 const NotificationCenterPage = lazy(() => import('@/features/notifications/NotificationCenterPage'));
 
-// ── Placeholder pages for future milestones (lazy loaded) ──
+// ── Report pages (F21 — lazy loaded) ──
+const ReportsHubPage = lazy(() => import('@/features/reports/ReportsHubPage'));
+const ReportViewerPage = lazy(() => import('@/features/reports/ReportViewerPage'));
+
+// ── Remaining lazy loaded pages ──
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'));
-const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
 
 // ── Layout components ──
 import { AppShell, POSLayout } from '@/components/layout';
@@ -161,7 +164,8 @@ function AppRoutes() {
 
           {/* Reports — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
-            <Route path="/reports" element={<LazyPage><ReportsPage /></LazyPage>} />
+            <Route path="/reports" element={<LazyPage><ReportsHubPage /></LazyPage>} />
+            <Route path="/reports/:reportKey" element={<LazyPage><ReportViewerPage /></LazyPage>} />
           </Route>
 
           {/* Expenses — manager+ */}
