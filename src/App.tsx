@@ -68,6 +68,10 @@ const LabelPrintPage = lazy(() => import('@/features/labels/LabelPrintPage'));
 // ── Sync pages (F15 — lazy loaded) ──
 const SyncReviewPage = lazy(() => import('@/features/sync/SyncReviewPage'));
 
+// ── Migration pages (F17 — lazy loaded) ──
+const CustomerKhataImportPage = lazy(() => import('@/features/migration/CustomerKhataImportPage'));
+const SupplierBalanceImportPage = lazy(() => import('@/features/migration/SupplierBalanceImportPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'));
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
@@ -159,6 +163,8 @@ function AppRoutes() {
             <Route path="/settings" element={<LazyPage><StoreSettingsPage /></LazyPage>} />
             <Route path="/settings/gst" element={<LazyPage><GstSettingsPage /></LazyPage>} />
             <Route path="/settings/pin" element={<LazyPage><PinSetupPage /></LazyPage>} />
+            <Route path="/migration/customers" element={<LazyPage><CustomerKhataImportPage /></LazyPage>} />
+            <Route path="/migration/suppliers" element={<LazyPage><SupplierBalanceImportPage /></LazyPage>} />
           </Route>
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
             <Route path="/settings/users" element={<LazyPage><UserManagementPage /></LazyPage>} />
