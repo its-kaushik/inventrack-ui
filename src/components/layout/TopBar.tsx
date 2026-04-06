@@ -1,8 +1,17 @@
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Menu, ArrowLeft, Search } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth.store';
+import { useLogout } from '@/hooks/use-auth';
+import { Bell, Menu, ArrowLeft, Search, Settings, LogOut, User } from 'lucide-react';
 
 interface TopBarProps {
   title?: string;
@@ -21,73 +30,55 @@ export function TopBar({
 }: TopBarProps) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const logoutMutation = useLogout();
 
   const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      navigate(-1);
-    }
+    if (onBack) onBack();
+    else navigate(-1);
   };
+
+  const userInitial = user?.name?.charAt(0)?.toUpperCase() ?? '?';
+  const canAccessSettings = user?.role === 'owner' || user?.role === 'super_admin';
 
   return (
     <header
       className={cn(
         'sticky top-0 z-30 flex h-14 items-center bg-white shadow-sticky',
-        className
+        className,
       )}
     >
       {isMobile ? (
         /* ── Mobile Top Bar ── */
         <div className="flex w-full items-center px-4">
-          {/* Left action */}
           <div className="flex w-10 shrink-0 items-center">
             {showBack ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBack}
-                aria-label="Go back"
-              >
+              <Button variant="ghost" size="icon" onClick={handleBack} aria-label="Go back">
                 <ArrowLeft className="size-5" />
               </Button>
             ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onMenuClick}
-                aria-label="Open menu"
-              >
+              <Button variant="ghost" size="icon" onClick={onMenuClick} aria-label="Open menu">
                 <Menu className="size-5" />
               </Button>
             )}
           </div>
 
-          {/* Center title */}
           <h1 className="flex-1 truncate text-center text-base font-semibold text-neutral-800">
             {title}
           </h1>
 
-          {/* Right action */}
           <div className="flex w-10 shrink-0 items-center justify-end">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Notifications"
-              className="relative"
-            >
+            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
               <Bell className="size-5" />
-              {/* Notification badge dot */}
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-error-500" />
+              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-error-500" />
             </Button>
           </div>
         </div>
       ) : (
         /* ── Desktop Top Bar ── */
         <div className="flex w-full items-center gap-4 px-6">
-          {/* Search placeholder */}
           <div className="relative max-w-md flex-1">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
               placeholder="Search products, customers..."
@@ -95,22 +86,42 @@ export function TopBar({
             />
           </div>
 
-          {/* Right side */}
           <div className="ml-auto flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Notifications"
-              className="relative"
-            >
+            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
               <Bell className="size-5" />
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-error-500" />
+              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-error-500" />
             </Button>
 
-            {/* User avatar placeholder */}
-            <div className="flex size-8 items-center justify-center rounded-full bg-primary-600 text-xs font-semibold text-white">
-              K
-            </div>
+            {/* User menu dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="flex size-8 items-center justify-center rounded-full bg-primary-600 text-xs font-semibold text-white hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                aria-label="User menu"
+              >
+                {userInitial}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-3 py-2">
+                  <p className="text-sm font-medium text-neutral-800">{user?.name ?? 'User'}</p>
+                  <p className="text-xs text-neutral-500 capitalize">{user?.role ?? 'unknown'}</p>
+                </div>
+                <DropdownMenuSeparator />
+                {canAccessSettings && (
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="mr-2 size-4" />
+                    Settings
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                  className="text-error-600 focus:text-error-600"
+                >
+                  <LogOut className="mr-2 size-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       )}

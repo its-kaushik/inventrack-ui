@@ -11,6 +11,12 @@ import LoginPage from '@/features/auth/LoginPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
 import StaffSignupPage from '@/features/auth/StaffSignupPage';
 
+// ── Settings pages (F4 — lazy loaded) ──
+const StoreSettingsPage = lazy(() => import('@/features/settings/StoreSettingsPage'));
+const GstSettingsPage = lazy(() => import('@/features/settings/GstSettingsPage'));
+const UserManagementPage = lazy(() => import('@/features/settings/UserManagementPage'));
+const PinSetupPage = lazy(() => import('@/features/settings/PinSetupPage'));
+
 // ── Placeholder pages for future milestones (lazy loaded) ──
 const DashboardPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Dashboard" milestone="F14" /> })));
 const ProductListPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Products" milestone="F5" /> })));
@@ -20,12 +26,14 @@ const CreditPage = lazy(() => import('@/features/placeholder/PlaceholderPage').t
 const PurchasesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Purchase Orders" milestone="F8" /> })));
 const ReportsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Reports" milestone="F21" /> })));
 const ExpensesPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Expenses" milestone="F12" /> })));
-const SettingsPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Settings" milestone="F4" /> })));
 const POSPage = lazy(() => import('@/features/placeholder/PlaceholderPage').then((m) => ({ default: () => <m.default title="Point of Sale" milestone="F10" /> })));
 
 // ── Layout components ──
-import { AppShell } from '@/components/layout';
-import { POSLayout } from '@/components/layout';
+import { AppShell, POSLayout } from '@/components/layout';
+
+function LazyPage({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<SkeletonPage />}>{children}</Suspense>;
+}
 
 function AppRoutes() {
   return (
@@ -42,117 +50,52 @@ function AppRoutes() {
           <Route index element={<Navigate to="/dashboard" replace />} />
 
           {/* Dashboard — all roles */}
-          <Route
-            path="/dashboard"
-            element={
-              <Suspense fallback={<SkeletonPage />}>
-                <DashboardPage />
-              </Suspense>
-            }
-          />
+          <Route path="/dashboard" element={<LazyPage><DashboardPage /></LazyPage>} />
 
           {/* Products — all roles */}
-          <Route
-            path="/products"
-            element={
-              <Suspense fallback={<SkeletonPage />}>
-                <ProductListPage />
-              </Suspense>
-            }
-          />
+          <Route path="/products" element={<LazyPage><ProductListPage /></LazyPage>} />
 
-          {/* Suppliers — all roles (view), manager+ (edit) */}
-          <Route
-            path="/suppliers"
-            element={
-              <Suspense fallback={<SkeletonPage />}>
-                <SupplierListPage />
-              </Suspense>
-            }
-          />
+          {/* Suppliers — manager+ */}
+          <Route path="/suppliers" element={<LazyPage><SupplierListPage /></LazyPage>} />
 
           {/* Customers — all roles */}
-          <Route
-            path="/customers"
-            element={
-              <Suspense fallback={<SkeletonPage />}>
-                <CustomerListPage />
-              </Suspense>
-            }
-          />
+          <Route path="/customers" element={<LazyPage><CustomerListPage /></LazyPage>} />
 
-          {/* Credit/Khata — manager, owner, super_admin */}
+          {/* Credit/Khata — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
-            <Route
-              path="/credit"
-              element={
-                <Suspense fallback={<SkeletonPage />}>
-                  <CreditPage />
-                </Suspense>
-              }
-            />
+            <Route path="/credit" element={<LazyPage><CreditPage /></LazyPage>} />
           </Route>
 
-          {/* Purchases — manager, owner, super_admin */}
+          {/* Purchases — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
-            <Route
-              path="/purchases"
-              element={
-                <Suspense fallback={<SkeletonPage />}>
-                  <PurchasesPage />
-                </Suspense>
-              }
-            />
+            <Route path="/purchases" element={<LazyPage><PurchasesPage /></LazyPage>} />
           </Route>
 
-          {/* Reports — manager, owner, super_admin */}
+          {/* Reports — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
-            <Route
-              path="/reports"
-              element={
-                <Suspense fallback={<SkeletonPage />}>
-                  <ReportsPage />
-                </Suspense>
-              }
-            />
+            <Route path="/reports" element={<LazyPage><ReportsPage /></LazyPage>} />
           </Route>
 
-          {/* Expenses — manager, owner, super_admin */}
+          {/* Expenses — manager+ */}
           <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
-            <Route
-              path="/expenses"
-              element={
-                <Suspense fallback={<SkeletonPage />}>
-                  <ExpensesPage />
-                </Suspense>
-              }
-            />
+            <Route path="/expenses" element={<LazyPage><ExpensesPage /></LazyPage>} />
           </Route>
 
-          {/* Settings — owner, super_admin */}
+          {/* Settings — role-gated sub-pages */}
           <Route element={<RoleGuard roles={['super_admin', 'owner']} />}>
-            <Route
-              path="/settings"
-              element={
-                <Suspense fallback={<SkeletonPage />}>
-                  <SettingsPage />
-                </Suspense>
-              }
-            />
+            <Route path="/settings" element={<LazyPage><StoreSettingsPage /></LazyPage>} />
+            <Route path="/settings/gst" element={<LazyPage><GstSettingsPage /></LazyPage>} />
+            <Route path="/settings/pin" element={<LazyPage><PinSetupPage /></LazyPage>} />
+          </Route>
+          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+            <Route path="/settings/users" element={<LazyPage><UserManagementPage /></LazyPage>} />
           </Route>
         </Route>
 
         {/* ── POS routes (dedicated full-screen layout) ── */}
         <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
           <Route element={<POSLayout />}>
-            <Route
-              path="/pos"
-              element={
-                <Suspense fallback={<SkeletonPage />}>
-                  <POSPage />
-                </Suspense>
-              }
-            />
+            <Route path="/pos" element={<LazyPage><POSPage /></LazyPage>} />
           </Route>
         </Route>
       </Route>

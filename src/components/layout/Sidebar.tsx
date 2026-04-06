@@ -1,30 +1,33 @@
-import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/button';
 import { NavLink } from 'react-router-dom';
-import {
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { getSidebarItems } from '@/config/navigation';
+import { useLogout } from '@/hooks/use-auth';
 import type { Role } from '@/types/enums';
 
 interface SidebarProps {
   currentRole?: Role;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
   className?: string;
 }
 
-export function Sidebar({ currentRole = 'owner', className }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function Sidebar({
+  currentRole = 'owner',
+  collapsed = false,
+  onToggleCollapse,
+  className,
+}: SidebarProps) {
   const { groups, bottomItems } = getSidebarItems(currentRole);
+  const logoutMutation = useLogout();
 
   return (
     <aside
       className={cn(
         'fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200',
         collapsed ? 'w-16' : 'w-60',
-        className
+        className,
       )}
     >
       {/* ── Logo area ── */}
@@ -40,13 +43,11 @@ export function Sidebar({ currentRole = 'owner', className }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto px-2 py-4">
         {groups.map((group) => (
           <div key={group.key} className="mb-4">
-            {/* Section header */}
             {!collapsed && (
               <span className="mb-1 block px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
                 {group.label}
               </span>
             )}
-
             <ul className="space-y-0.5">
               {group.items.map((item) => (
                 <li key={item.path}>
@@ -58,7 +59,7 @@ export function Sidebar({ currentRole = 'owner', className }: SidebarProps) {
                         collapsed && 'justify-center px-0',
                         isActive
                           ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                          : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                          : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
                       )
                     }
                     title={collapsed ? item.label : undefined}
@@ -73,7 +74,7 @@ export function Sidebar({ currentRole = 'owner', className }: SidebarProps) {
         ))}
       </nav>
 
-      {/* ── Bottom items (Settings, Logout) ── */}
+      {/* ── Bottom items (Settings) + Logout ── */}
       <div className="border-t border-sidebar-border px-2 py-3">
         <ul className="space-y-0.5">
           {bottomItems.map((item) => (
@@ -86,7 +87,7 @@ export function Sidebar({ currentRole = 'owner', className }: SidebarProps) {
                     collapsed && 'justify-center px-0',
                     isActive
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                      : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
                   )
                 }
                 title={collapsed ? item.label : undefined}
@@ -97,17 +98,15 @@ export function Sidebar({ currentRole = 'owner', className }: SidebarProps) {
             </li>
           ))}
 
-          {/* Logout button (not a NavLink) */}
           <li>
             <button
               type="button"
-              onClick={() => {
-                // TODO: implement logout in F3 (auth context)
-              }}
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
               className={cn(
                 'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-                collapsed && 'justify-center px-0'
+                collapsed && 'justify-center px-0',
               )}
               title={collapsed ? 'Logout' : undefined}
             >
@@ -123,18 +122,14 @@ export function Sidebar({ currentRole = 'owner', className }: SidebarProps) {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setCollapsed((prev) => !prev)}
+          onClick={onToggleCollapse}
           className={cn(
             'w-full text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-            collapsed && 'mx-auto'
+            collapsed && 'mx-auto',
           )}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? (
-            <ChevronRight className="size-4" />
-          ) : (
-            <ChevronLeft className="size-4" />
-          )}
+          {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
         </Button>
       </div>
     </aside>
