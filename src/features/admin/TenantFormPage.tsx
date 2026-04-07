@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
+import { Copy, Check } from 'lucide-react';
 
 import { PageHeader } from '@/components/layout';
 import { Button } from '@/components/ui/button';
@@ -34,9 +36,17 @@ const tenantSchema = z.object({
 
 type TenantFormData = z.infer<typeof tenantSchema>;
 
+interface CreatedOwnerInfo {
+  ownerName: string;
+  ownerEmail: string;
+  tempPassword: string;
+}
+
 export default function TenantFormPage() {
   const navigate = useNavigate();
   const createTenant = useCreateTenant();
+  const [createdOwner, setCreatedOwner] = useState<CreatedOwnerInfo | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const {
     register,
@@ -66,9 +76,68 @@ export default function TenantFormPage() {
         email: data.email || null,
         gstin: data.gstin || null,
       },
-      { onSuccess: () => navigate('/admin/tenants') },
+      {
+        onSuccess: (res) => {
+          const { tempPassword } = res.data as { tempPassword?: string };
+          if (tempPassword) {
+            setCreatedOwner({
+              ownerName: data.ownerName,
+              ownerEmail: data.ownerEmail,
+              tempPassword,
+            });
+          } else {
+            navigate('/admin/tenants');
+          }
+        },
+      },
     );
   });
+
+  const handleCopy = async () => {
+    if (!createdOwner) return;
+    const text = `Email: ${createdOwner.ownerEmail}\nTemporary Password: ${createdOwner.tempPassword}`;
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ── Success screen — show temp password ──
+  if (createdOwner) {
+    return (
+      <div className="space-y-4 p-4 desktop:p-6">
+        <PageHeader title="Tenant Created" />
+        <Card className="mx-auto max-w-lg">
+          <CardHeader>
+            <CardTitle className="text-base text-success-600">Owner Account Created</CardTitle>
+            <p className="text-sm text-neutral-500">
+              Share these credentials with <strong>{createdOwner.ownerName}</strong> so they can log in. The password cannot be retrieved later.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2 rounded-lg bg-neutral-50 p-4 font-mono text-sm">
+              <div>
+                <span className="text-neutral-500">Email: </span>
+                <span className="font-semibold text-neutral-800">{createdOwner.ownerEmail}</span>
+              </div>
+              <div>
+                <span className="text-neutral-500">Password: </span>
+                <span className="font-semibold text-neutral-800">{createdOwner.tempPassword}</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={handleCopy} className="gap-1.5">
+                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                {copied ? 'Copied' : 'Copy Credentials'}
+              </Button>
+              <Button onClick={() => navigate('/admin/tenants')}>
+                Done
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 p-4 desktop:p-6">
@@ -129,7 +198,7 @@ export default function TenantFormPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Owner Account</CardTitle>
-            <p className="text-sm text-neutral-500">An owner account will be created and an invite sent.</p>
+            <p className="text-sm text-neutral-500">An owner account will be created with a temporary password.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
