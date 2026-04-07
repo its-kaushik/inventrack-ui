@@ -44,7 +44,8 @@ export function RoleGuard({ roles, children }: RoleGuardProps) {
   }
 
   if (!roles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+    const fallback = user.role === 'super_admin' ? '/admin/tenants' : '/dashboard';
+    return <Navigate to={fallback} replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

@@ -37,7 +37,8 @@ export function useLogin() {
       const { accessToken, refreshToken, user } = res.data;
       login({ accessToken, refreshToken }, user);
       queryClient.clear();
-      navigate('/dashboard', { replace: true });
+      const dest = user.role === 'super_admin' ? '/admin/tenants' : '/dashboard';
+      navigate(dest, { replace: true });
     },
     onError: () => {
       // Error toast is handled by the mutation caller (for inline display)

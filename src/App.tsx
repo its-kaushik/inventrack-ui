@@ -99,6 +99,12 @@ function LazyPage({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<SkeletonPage />}>{children}</Suspense>;
 }
 
+function IndexRedirect() {
+  const { user } = useAuthStore();
+  const dest = user?.role === 'super_admin' ? '/admin/tenants' : '/dashboard';
+  return <Navigate to={dest} replace />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -110,16 +116,16 @@ function AppRoutes() {
       {/* ── Protected routes (with AppShell layout) ── */}
       <Route element={<AuthGuard />}>
         <Route element={<AppShell />}>
-          {/* Default redirect */}
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          {/* Default redirect — role-aware */}
+          <Route index element={<IndexRedirect />} />
 
           {/* Dashboard — all roles */}
           <Route path="/dashboard" element={<LazyPage><DashboardPage /></LazyPage>} />
 
-          {/* Products — all roles can view, owner/manager can create/edit */}
+          {/* Products — tenant roles can view, owner/manager can create/edit */}
           <Route path="/products" element={<LazyPage><ProductListPage /></LazyPage>} />
           <Route path="/products/:id" element={<LazyPage><ProductDetailPage /></LazyPage>} />
-          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          <Route element={<RoleGuard roles={['owner', 'manager']} />}>
             <Route path="/products/new" element={<LazyPage><ProductFormPage /></LazyPage>} />
             <Route path="/products/:id/edit" element={<LazyPage><ProductFormPage /></LazyPage>} />
             <Route path="/products/import" element={<LazyPage><BulkImportPage /></LazyPage>} />
@@ -131,10 +137,10 @@ function AppRoutes() {
           {/* Labels — all roles */}
           <Route path="/labels" element={<LazyPage><LabelPrintPage /></LazyPage>} />
 
-          {/* Suppliers — all roles can view, manager+ can create/edit */}
+          {/* Suppliers — tenant roles can view, owner/manager can create/edit */}
           <Route path="/suppliers" element={<LazyPage><SupplierListPage /></LazyPage>} />
           <Route path="/suppliers/:id" element={<LazyPage><SupplierDetailPage /></LazyPage>} />
-          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          <Route element={<RoleGuard roles={['owner', 'manager']} />}>
             <Route path="/suppliers/new" element={<LazyPage><SupplierFormPage /></LazyPage>} />
             <Route path="/suppliers/:id/edit" element={<LazyPage><SupplierFormPage /></LazyPage>} />
           </Route>
@@ -145,16 +151,16 @@ function AppRoutes() {
           <Route path="/customers/new" element={<LazyPage><CustomerFormPage /></LazyPage>} />
           <Route path="/customers/:id/edit" element={<LazyPage><CustomerFormPage /></LazyPage>} />
 
-          {/* Credit/Khata — manager+ */}
-          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          {/* Credit/Khata — owner/manager */}
+          <Route element={<RoleGuard roles={['owner', 'manager']} />}>
             <Route path="/credit" element={<LazyPage><CustomerKhataListPage /></LazyPage>} />
             <Route path="/credit/customers/:id" element={<LazyPage><CustomerLedgerPage /></LazyPage>} />
             <Route path="/credit/suppliers" element={<LazyPage><SupplierPayablesPage /></LazyPage>} />
             <Route path="/credit/suppliers/:id" element={<LazyPage><SupplierLedgerPage /></LazyPage>} />
           </Route>
 
-          {/* Purchases — manager+ */}
-          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          {/* Purchases — owner/manager */}
+          <Route element={<RoleGuard roles={['owner', 'manager']} />}>
             <Route path="/purchases" element={<LazyPage><POListPage /></LazyPage>} />
             <Route path="/purchases/new" element={<LazyPage><POFormPage /></LazyPage>} />
             <Route path="/purchases/:id" element={<LazyPage><PODetailPage /></LazyPage>} />
@@ -162,32 +168,32 @@ function AppRoutes() {
             <Route path="/purchases/return" element={<LazyPage><PurchaseReturnPage /></LazyPage>} />
           </Route>
 
-          {/* Reports — manager+ */}
-          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          {/* Reports — owner/manager */}
+          <Route element={<RoleGuard roles={['owner', 'manager']} />}>
             <Route path="/reports" element={<LazyPage><ReportsHubPage /></LazyPage>} />
             <Route path="/reports/:reportKey" element={<LazyPage><ReportViewerPage /></LazyPage>} />
           </Route>
 
-          {/* Expenses — manager+ */}
-          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          {/* Expenses — owner/manager */}
+          <Route element={<RoleGuard roles={['owner', 'manager']} />}>
             <Route path="/expenses" element={<LazyPage><ExpenseListPage /></LazyPage>} />
             <Route path="/expenses/new" element={<LazyPage><ExpenseFormPage /></LazyPage>} />
             <Route path="/cash-register" element={<LazyPage><CashRegisterPage /></LazyPage>} />
             <Route path="/sync-review" element={<LazyPage><SyncReviewPage /></LazyPage>} />
 
-            {/* Notifications — all roles */}
+            {/* Notifications — owner/manager */}
             <Route path="/notifications" element={<LazyPage><NotificationCenterPage /></LazyPage>} />
           </Route>
 
-          {/* Settings — role-gated sub-pages */}
-          <Route element={<RoleGuard roles={['super_admin', 'owner']} />}>
+          {/* Settings — owner only (store-level settings) */}
+          <Route element={<RoleGuard roles={['owner']} />}>
             <Route path="/settings" element={<LazyPage><StoreSettingsPage /></LazyPage>} />
             <Route path="/settings/gst" element={<LazyPage><GstSettingsPage /></LazyPage>} />
             <Route path="/settings/pin" element={<LazyPage><PinSetupPage /></LazyPage>} />
             <Route path="/migration/customers" element={<LazyPage><CustomerKhataImportPage /></LazyPage>} />
             <Route path="/migration/suppliers" element={<LazyPage><SupplierBalanceImportPage /></LazyPage>} />
           </Route>
-          <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+          <Route element={<RoleGuard roles={['owner', 'manager']} />}>
             <Route path="/settings/users" element={<LazyPage><UserManagementPage /></LazyPage>} />
           </Route>
         </Route>
@@ -201,7 +207,7 @@ function AppRoutes() {
         </Route>
 
         {/* ── POS routes (dedicated full-screen layout) ── */}
-        <Route element={<RoleGuard roles={['super_admin', 'owner', 'manager']} />}>
+        <Route element={<RoleGuard roles={['owner', 'manager']} />}>
           <Route element={<POSLayout />}>
             <Route path="/pos" element={<LazyPage><POSPage /></LazyPage>} />
             <Route path="/pos/payment" element={<LazyPage><PaymentPage /></LazyPage>} />
